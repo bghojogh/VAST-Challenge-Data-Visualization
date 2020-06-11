@@ -1,0 +1,1 @@
+Please when opening the RMarkdoen file, first load the saved workspace existing in the foler named "Workspace".

@@ -1,0 +1,1 @@
+The workspace should be pasted here. It is removed to make the folder light. 

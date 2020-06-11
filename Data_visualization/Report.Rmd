@@ -1,0 +1,3634 @@
+---
+title: "Addressing the Mystery of Population Decline of The Rose-Crested Blue Pipit In a Nature Preserve Using Data Visualization"
+author: | 
+  | Course Project of Data Visualization (Instructor: Prof. Wayne Oldford)
+  | University of Waterloo, Waterloo, ON, Canada
+  | Benyamin Ghojogh (Student ID: 20743301)
+date: "Fall 2018"
+output:
+#  html_document:
+#    toc: true  # for outline at first of html document
+#    number_sections: true
+  pdf_document:
+    toc: true  # for outline at first of html document
+    toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true
+    fig_caption: yes
+bibliography: bibliography.bib  # https://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html
+# Rmarkdown commands: https://rmarkdown.rstudio.com/authoring_basics.html
+header-includes:  # figure and table captions: https://community.rstudio.com/t/avoiding-repetitive-latex-codes-in-r-markdown/7834
+  - \usepackage{caption}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(12314159)
+```
+
+```{r, eval=TRUE, echo=FALSE}
+# set seed for random generation:
+set.seed(12314159)
+```
+
+# Abstract
+
+This paper addresses the mystery population decline of a bird, named Rose-Crested Blue Pipit, in a hypothetical nature preserve. Two main methods for exploring patterns in data are data visualization and machine learning. The former relies on human for investigating the patterns while the latter relies on the machine. This paper tries to find the patterns using merely the data visualization. Different visualization techniques are used and the reasons of the problem are found and categorized. Finally, the solutions for preventing the future similar problems are suggested.
+
+# Introduction
+
+## The Addressed Problem 
+
+This paper/project addresses the VAST (Visual Analytics Science and Technology) 2017 challenge [@web_vast_challenge]. This challenge is about the mystery of population decline of a specific type of bird, named Rose-Crested Blue Pipit, in a hypothetical nature preserve. This preserve is close to a hypothetical city named Mistford. In this project, we aim to find out the possible reasons of this population decline using the provided dataset. This problem is sourced from various reasons which we address them one by one using pattern exploration by data visualization. 
+    
+## Dataset 
+
+The dataset provided in [@web_vast_challenge] includes several data subsets. In this section, we briefly introduce the dataset and its data subsets; however, we defer the thorough explanation of the data in the sections where we want to analyze that piece of data. 
+
+* \textbf{Data subset 1:} This piece of data is provided for the mini-challenge 1 in the VAST challenge. A ($200\times 200$)-pixel map of the preserve is provided where five different color-coded types of gates in the preserve are shown in it. The five types of gates are entrances, general gates, gates, ranger stops, and camping. Moreover, the records of passing through these gates are reported in a file. These records are for seven different types of vehicles, i.e., two-axle car (or motorcycle), two-axle truck, three-axle truck, four-axle (and above) truck, two-axle bus, three-axle bus, and two-axle ranger truck. In overall, $171477$ records are provided each of which having information of time/date, car ID, car type, and gate name.
+
+* \textbf{Data subset 2:} This piece of data is provided for the mini-challenge 2 in the VAST challenge. The recorded data from nine different sensors, whose coordinates are shown in a provided map, are available. These sensors have collected samples of four specific chemicals emitted to the air by four factories close to the preserve. The coordinates of factories are also provided. In overall, $79244$ records are provided. Moreover, meteorological data are also provided which shows the date, wind direction, and wind speed. There are $708$ meteorological records available.
+
+* \textbf{Data subset 3:} This piece of data is provided for the mini-challenge 3 in the VAST challenge. Twelve multi-spectral six-channel images are provided which are taken from the preserve in different seasons of past few years. The channels of the images are blue, green, red, Near Infrared (NIR), Short-Wave Infrared (SWIR) 1, and Short-Wave Infrared (SWIR) 2. The size of every image is $650\times 650$ pixels. Moreover, a map of Boonsong Lake, a lake within the preserve, is provided to help us find out the scale and orientation of the multi-spectral images.
+    
+As can be seen in the above explanations, this dataset includes different types of features, including numerical features, categorical features, time series, images, maps, etc, making it sutiable for a data visualization and pattern exploration project. 
+
+# Analysis of Vehicle Activities 
+    
+The data of vehicle avtivities and traffic through the preserve are given in order to investigate the possible unusual traffic patterns responsible for the decline of the Blue Pipit. 
+    
+## The Given Data
+    
+The data subset 1 provides the information of the map of preserve where five different gates are shown on it. Moreover, the data of traffic of the vehicles of various types are given for analysis.
+    
+### The Map of Nature Preserve
+
+The map of the natrue preserve is shown in Fig. \ref{figure_map}. As can be seen in this map, there are five different gates named as entrances, general gates, gates, ranger stops, and camping. When the vehicles pass these gates, the date and information of the passage is recorded. There is one additional gate, the ranger base gate, where the preserve rangers stay at when they are not working. Table \ref{table_gates} lists the existing gates in the preserve as well as explaining their roles. As this tabe shows, merely rangers are allowed to pass through the ``gates'' and the ranger base.
+
+\bigbreak 
+
+\begin{center}
+\begin{tabular}{l | l | l}
+\hline
+\hline
+\textbf{Gate} & \textbf{Allowed Vehicle} & \textbf{Role}\\
+\hline
+\hline
+Entrance & All vehicles & Entring and leaving the preserve\\
+\hline
+General Gate & All vehicles & Recording flow of traffic\\
+\hline
+Gate & Rangers & Ranger activities beyond roadways\\
+\hline
+Ranger stop & All vehicles & Representing working areas for rangers\\
+\hline
+Camping & All vehicles & Recording visitors\\
+\hline
+Ranger base & Rangers & Rangers stay there when not working\\
+\hline
+\hline
+\end{tabular}
+\captionof{table}{The different gates in the preserve.}
+\label{table_gates}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{./images/MapLargeLabels}
+\captionof{figure}{The map of the nature preserve. The entrances, general gates, gates, ranger stops, and camping locations are identified by light green, light blue, light red, yellow, and orange colors. The nine chemical sensors are shown in red color and the factories at the south of the preserve are highlighted with dark green color.}
+\label{figure_map}
+\end{center}
+
+\bigbreak
+
+A ($200 \times 200$)-pixel bitmap image of the map is also given by the dataset. The gates are shown by colored pixels. Different gates are color-coded. The roads also have a different color. We read this bitmap image and by discriminating the colors, we find out the coordinates of the roads and different gates. Note that in this image, the $(0,0)$ pixel is the south-west corner while in real map, $(0,0)$ is at the north-west corner. therfore, some manipulation is done for correcting the coordinates. The obtained map is shown in Fig. \ref{figure_plotted_map}. the gates are also color-coded in this map. 
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 6, fig.width = 6, fig.align = "center"}
+# read the bitmap (or tiff) map:
+{
+  suppressMessages(library(rtiff))
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset1/Lekagul_Roadways.tif", sep="/")
+  bitmap_map <- readTiff(address_file)
+}
+
+# construct the 3D RGB matrix of map:
+{
+  image_size <- dim(bitmap_map@red)
+  map <- array(0, c(image_size[1], image_size[2], 3));  
+  map[,,1] <- bitmap_map@red
+  map[,,2] <- bitmap_map@green
+  map[,,3] <- bitmap_map@blue
+}
+
+# plot the bitmap map:
+#plot(bitmap_map)
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+convert_pixelIndex_to_mapCoordinate <- function(data){
+  # (0,0) in pixel indexing is at bottom-left corner
+  # (0,0) in map coordinate is at upper-left corner
+  x <- data[,1]
+  y <- data[,2]
+  y_new <- -x
+  x_new <- y
+  map_coordinate <- cbind(x_new,y_new)
+  return(map_coordinate)
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 6, fig.width = 6, fig.align = "center"}
+# plotting the map (location of gates and the road) of the preserve:
+{
+  # light green pixels:
+  entrance <- which((map[,,1] == 76/255) & (map[,,2] == 1) & (map[,,3] == 0), arr.ind = T)
+  colnames(entrance) <- NULL
+  entrance <- convert_pixelIndex_to_mapCoordinate(data=entrance)
+  
+  # light blue pixels:
+  general_gate <- which((map[,,1] == 0) & (map[,,2] == 1) & (map[,,3] == 1), arr.ind = T)
+  colnames(general_gate) <- NULL
+  general_gate <- convert_pixelIndex_to_mapCoordinate(data=general_gate)
+  
+  # light red pixels:
+  gate <- which((map[,,1] == 1) & (map[,,2] == 0) & (map[,,3] == 0), arr.ind = T)
+  colnames(gate) <- NULL
+  gate <- convert_pixelIndex_to_mapCoordinate(data=gate)
+  
+  # yellow pixels:
+  ranger_stop <- which((map[,,1] == 1) & (map[,,2] == 216/255) & (map[,,3] == 0), arr.ind = T)
+  colnames(ranger_stop) <- NULL
+  ranger_stop <- convert_pixelIndex_to_mapCoordinate(data=ranger_stop)
+  
+  # orange pixels:
+  camping <- which((map[,,1] == 1) & (map[,,2] == 106/255) & (map[,,3] == 0), arr.ind = T)
+  colnames(camping) <- NULL
+  camping <- convert_pixelIndex_to_mapCoordinate(data=camping)
+  
+  # pink pixel:
+  ranger_base <- which((map[,,1] == 1) & (map[,,2] == 0) & (map[,,3] == 220/255), arr.ind = T)
+  colnames(ranger_base) <- NULL
+  ranger_base <- convert_pixelIndex_to_mapCoordinate(data=ranger_base)
+  
+  # white pixels:
+  road <- which((map[,,1] == 1) & (map[,,2] == 1) & (map[,,3] == 1), arr.ind = T)
+  colnames(road) <- NULL
+  road <- convert_pixelIndex_to_mapCoordinate(data=road)
+  
+  plot(x=road[,1], y=road[,2], xlab="", ylab="", col=rgb(0,0,0, alpha=0.1), panel.first = grid(), cex=1, pch=16, type="p")
+  lines(x=entrance[,1], y=entrance[,2], xlab="", ylab="", col=rgb(76/255,1,0, alpha=1), panel.first = grid(), cex=2, pch=16, type="p", xlim=c(0,200), ylim=c(0,200))
+  lines(x=general_gate[,1], y=general_gate[,2], xlab="", ylab="", col=rgb(0,1,1, alpha=1), panel.first = grid(), cex=2, pch=16, type="p", xlim=c(0,200), ylim=c(0,200))
+  lines(x=gate[,1], y=gate[,2], xlab="", ylab="", col=rgb(1,0,0, alpha=1), panel.first = grid(), cex=2, pch=16, type="p", xlim=c(0,200), ylim=c(0,200))
+  lines(x=ranger_stop[,1], y=ranger_stop[,2], xlab="", ylab="", col=rgb(1,216/255,0, alpha=1), panel.first = grid(), cex=2, pch=16, type="p", xlim=c(0,200), ylim=c(0,200))
+  lines(x=camping[,1], y=camping[,2], xlab="", ylab="", col=rgb(1,106/255,0, alpha=1), panel.first = grid(), cex=2, pch=16, type="p", xlim=c(0,200), ylim=c(0,200))
+  lines(x=ranger_base[,1], y=ranger_base[,2], xlab="", ylab="", col=rgb(1,0,220/255, alpha=1), panel.first = grid(), cex=2, pch=16, type="p", xlim=c(0,200), ylim=c(0,200))
+  
+  # Add legend to top right, outside plot region
+  legend(1, -140, legend=c("entrance", "general gate", "gate", "ranger stop", "camping", "ranger base"),
+         col=c(rgb(76/255,1,0), rgb(0,1,1), rgb(1,0,0), rgb(1,216/255,0), rgb(1,106/255,0), rgb(1,0,220/255)), pch=c(16,16,16,16,16,16), cex=0.86)
+}
+```
+\captionof{figure}{The map and location of gates and roads in the natrue preserve.}
+\label{figure_plotted_map}
+
+\bigbreak
+
+### The Traffic of Different Vehicles
+
+The recoded data for the traffic are categorized by the type of vehicle. Seven types of vehicles are type 1 (two-axle car or motorcycle), type 2 (two-axle truck), type 3 (three-axle truck), type 4 (four-axle and above truck), type 5 (two-axle bus), type 6 (three-axle bus), and type 7 (two-axle truck for rangers). Figure \ref{figure_barplot_numberOfCars_inTypes} shows the number of recorded vehicles in the different types. Type 1 has the most cardinality because most of regular visitors use this type of vehicles. Other types are mostly for construction or surveillance.  
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# read the dataset 1:
+cars_data <- read.csv("./Dataset/Dataset1/Lekagul_Sensor_Data.csv", header=TRUE)
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# coordinates of the gates (found by looking at the coordinates of gate points in the figure of map):
+{
+  entrance0 <- c(63,   -14)
+  entrance1 <- c(18,   -68)
+  entrance2 <- c(184,   -88)
+  entrance3 <- c(116,  -168)
+  entrance4 <- c(141,  -185)
+  
+  general_gate0 <- c(111,   -10)
+  general_gate1 <- c(65,   -26)
+  general_gate2 <- c(105,   -33)
+  general_gate3 <- c(187,   -56)
+  general_gate4 <- c(70,   -99)
+  general_gate5 <- c(125,  -112)
+  general_gate6 <- c(137,  -138)
+  general_gate7 <- c(66,  -145)
+  
+  gate0 <- c(64,   -34)
+  gate1 <- c(59,   -45)
+  gate2 <- c(25,   -55)
+  gate3 <- c(64,   -34)
+  gate4 <- c(98,  -161)
+  gate5 <- c(132,  -147)
+  gate6 <- c(117,  -152)
+  gate7 <- c(98,  -161)
+  gate8 <- c(139,  -182)
+  
+  ranger_stop0 <- c(90,   -17)
+  ranger_stop1 <- c(20,   -25)
+  ranger_stop2 <- c(81,   -36)
+  ranger_stop3 <- c(149,   -46)
+  ranger_stop4 <- c(19,   -96)
+  ranger_stop5 <- c(152,  -119)
+  ranger_stop6 <- c(124,  -148)
+  ranger_stop7 <- c(101,  -153)
+  
+  camping0 <- c(53,   -42)
+  camping1 <- c(130,   -51)
+  camping2 <- c(45,   -65)
+  camping3 <- c(46,   -69)
+  camping4 <- c(49,   -90)
+  camping5 <- c(21,  -122)
+  camping6 <- c(151,  -178)
+  camping7 <- c(182,  -146)
+  camping8 <- c(184,   -49)
+  
+  the_ranger_base <- c(129,  -176)
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# setting coordinates of the cars at different time slots:
+{
+  gate_names <- unique(cars_data$gate.name)
+  for(gate_name in gate_names){
+    if(gate_name == "entrance0"){
+      x <- entrance0[1]
+      y <- entrance0[2]
+    }
+    else if(gate_name == "entrance1"){
+      x <- entrance1[1]
+      y <- entrance1[2]
+    }
+    else if(gate_name == "entrance2"){
+      x <- entrance2[1]
+      y <- entrance2[2]
+    }
+    else if(gate_name == "entrance3"){
+      x <- entrance3[1]
+      y <- entrance3[2]
+    }
+    else if(gate_name == "entrance4"){
+      x <- entrance4[1]
+      y <- entrance4[2]
+    }
+    
+    if(gate_name == "general-gate0"){
+      x <- general_gate0[1]
+      y <- general_gate0[2]
+    }
+    else if(gate_name == "general-gate1"){
+      x <- general_gate1[1]
+      y <- general_gate1[2]
+    }
+    else if(gate_name == "general-gate2"){
+      x <- general_gate2[1]
+      y <- general_gate2[2]
+    }
+    else if(gate_name == "general-gate3"){
+      x <- general_gate3[1]
+      y <- general_gate3[2]
+    }
+    else if(gate_name == "general-gate4"){
+      x <- general_gate4[1]
+      y <- general_gate4[2]
+    }
+    else if(gate_name == "general-gate5"){
+      x <- general_gate5[1]
+      y <- general_gate5[2]
+    }
+    else if(gate_name == "general-gate6"){
+      x <- general_gate6[1]
+      y <- general_gate6[2]
+    }
+    else if(gate_name == "general-gate7"){
+      x <- general_gate7[1]
+      y <- general_gate7[2]
+    }
+      
+    if(gate_name == "gate0"){
+      x <- gate0[1]
+      y <- gate0[2]
+    }  
+    else if(gate_name == "gate1"){
+      x <- gate1[1]
+      y <- gate1[2]
+    }
+    else if(gate_name == "gate2"){
+      x <- gate2[1]
+      y <- gate2[2]
+    }
+    else if(gate_name == "gate3"){
+      x <- gate3[1]
+      y <- gate3[2]
+    }
+    else if(gate_name == "gate4"){
+      x <- gate4[1]
+      y <- gate4[2]
+    }
+    else if(gate_name == "gate5"){
+      x <- gate5[1]
+      y <- gate5[2]
+    }
+    else if(gate_name == "gate6"){
+      x <- gate6[1]
+      y <- gate6[2]
+    }
+    else if(gate_name == "gate7"){
+      x <- gate7[1]
+      y <- gate7[2]
+    }
+    else if(gate_name == "gate8"){
+      x <- gate8[1]
+      y <- gate8[2]
+    }
+    
+    if(gate_name == "ranger-stop0"){
+      x <- ranger_stop0[1]
+      y <- ranger_stop0[2]
+    }  
+    else if(gate_name == "ranger-stop1"){
+      x <- ranger_stop1[1]
+      y <- ranger_stop1[2]
+    }
+    else if(gate_name == "ranger-stop2"){
+      x <- ranger_stop2[1]
+      y <- ranger_stop2[2]
+    }
+    else if(gate_name == "ranger-stop3"){
+      x <- ranger_stop3[1]
+      y <- ranger_stop3[2]
+    }
+    else if(gate_name == "ranger-stop4"){
+      x <- ranger_stop4[1]
+      y <- ranger_stop4[2]
+    }
+    else if(gate_name == "ranger-stop5"){
+      x <- ranger_stop5[1]
+      y <- ranger_stop5[2]
+    }
+    else if(gate_name == "ranger-stop6"){
+      x <- ranger_stop6[1]
+      y <- ranger_stop6[2]
+    }
+    else if(gate_name == "ranger-stop7"){
+      x <- ranger_stop7[1]
+      y <- ranger_stop7[2]
+    }
+    
+    if(gate_name == "camping0"){
+      x <- camping0[1]
+      y <- camping0[2]
+    }
+    else if(gate_name == "camping1"){
+      x <- camping1[1]
+      y <- camping1[2]
+    }
+    else if(gate_name == "camping2"){
+      x <- camping2[1]
+      y <- camping2[2]
+    }
+    else if(gate_name == "camping3"){
+      x <- camping3[1]
+      y <- camping3[2]
+    }
+    else if(gate_name == "camping4"){
+      x <- camping4[1]
+      y <- camping4[2]
+    }
+    else if(gate_name == "camping5"){
+      x <- camping5[1]
+      y <- camping5[2]
+    }
+    else if(gate_name == "camping6"){
+      x <- camping6[1]
+      y <- camping6[2]
+    }
+    else if(gate_name == "camping7"){
+      x <- camping7[1]
+      y <- camping7[2]
+    }
+    else if(gate_name == "camping8"){
+      x <- camping8[1]
+      y <- camping8[2]
+    }
+    
+    if(gate_name == "ranger-base"){
+      x <- the_ranger_base[1]
+      y <- the_ranger_base[2]
+    }
+    
+    cars_data[cars_data$gate.name == gate_name, "x"] <- x
+    cars_data[cars_data$gate.name == gate_name, "y"] <- y
+  }
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# display the dataset 1 after adding the coordinates:
+cars_data
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# separate the cars of different types:
+{
+  cars_type_1 <- cars_data[cars_data$car.type == 1, ]
+  cars_type_2 <- cars_data[cars_data$car.type == 2, ]
+  cars_type_3 <- cars_data[cars_data$car.type == 3, ]
+  cars_type_4 <- cars_data[cars_data$car.type == 4, ]
+  cars_type_5 <- cars_data[cars_data$car.type == 5, ]
+  cars_type_6 <- cars_data[cars_data$car.type == 6, ]
+  cars_type_2P <- cars_data[cars_data$car.type == "2P", ]
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 3.5, fig.width = 3.5, fig.align = "center"}
+# bar plot of the number of cars in every type:
+{
+  n_cars_in_group <- vector(length=7)
+  car_IDs_of_this_type <- unique(cars_type_1$car.id)
+  n_cars_in_group[1] <- length(car_IDs_of_this_type)
+  car_IDs_of_this_type <- unique(cars_type_2$car.id)
+  n_cars_in_group[2] <- length(car_IDs_of_this_type)
+  car_IDs_of_this_type <- unique(cars_type_3$car.id)
+  n_cars_in_group[3] <- length(car_IDs_of_this_type)
+  car_IDs_of_this_type <- unique(cars_type_4$car.id)
+  n_cars_in_group[4] <- length(car_IDs_of_this_type)
+  car_IDs_of_this_type <- unique(cars_type_5$car.id)
+  n_cars_in_group[5] <- length(car_IDs_of_this_type)
+  car_IDs_of_this_type <- unique(cars_type_6$car.id)
+  n_cars_in_group[6] <- length(car_IDs_of_this_type)
+  car_IDs_of_this_type <- unique(cars_type_2P$car.id)
+  n_cars_in_group[7] <- length(car_IDs_of_this_type)
+  barplot(n_cars_in_group, main="Number of vehicles", horiz=TRUE,
+    names.arg=c("Type 1", "Type 2", "Type 3", "Type 4", "Type 5", "Type 6", "Type 7"), las = 2, xlim=c(0, 8000))
+}
+```
+\captionof{figure}{The number of vehicles in different vehicle types.}
+\label{figure_barplot_numberOfCars_inTypes}
+
+\bigbreak
+\bigbreak
+
+The records of sensors are available in the dataset reporting the time, car ID, car type, and the gate for different passages during various time periods. For every specific car ID, we extract the data of that car; therefore, for every car a time series data is obtained having the time slot and the passed gate. If we replace the gate names by their 2D coordinates, this time series can be shown as a trajectory on the map. the trajectory of an example car is shown in Fig. \ref{figure_trajectory_sampleCar}. The trajectory connects the passed gates together in the order they have been passed. In the display of trajectory, we use a circle and a square for indicating the start and end points of the traversed path, respectively. This display gives us valuable information about the gates and the areas which are visited by the vehicle. 
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# function for plotting the map:
+plot_the_map <- function(title=""){
+  plot(x=road[,1], y=road[,2], xlab="", ylab="", col=rgb(0,0,0, alpha=0.05), panel.first = grid(), cex=1, pch=16, type="p", axes=FALSE, frame.plot=TRUE, main=title)
+  lines(x=entrance[,1], y=entrance[,2], xlab="", ylab="", col=rgb(76/255,1,0, alpha=1), panel.first = grid(), cex=2, pch=16, type="p", xlim=c(0,200), ylim=c(0,200))
+  lines(x=general_gate[,1], y=general_gate[,2], xlab="", ylab="", col=rgb(0,1,1, alpha=1), panel.first = grid(), cex=2, pch=16, type="p", xlim=c(0,200), ylim=c(0,200))
+  lines(x=gate[,1], y=gate[,2], xlab="", ylab="", col=rgb(1,0,0, alpha=1), panel.first = grid(), cex=2, pch=16, type="p", xlim=c(0,200), ylim=c(0,200))
+  lines(x=ranger_stop[,1], y=ranger_stop[,2], xlab="", ylab="", col=rgb(1,216/255,0, alpha=1), panel.first = grid(), cex=2, pch=16, type="p", xlim=c(0,200), ylim=c(0,200))
+  lines(x=camping[,1], y=camping[,2], xlab="", ylab="", col=rgb(1,106/255,0, alpha=1), panel.first = grid(), cex=2, pch=16, type="p", xlim=c(0,200), ylim=c(0,200))
+  lines(x=ranger_base[,1], y=ranger_base[,2], xlab="", ylab="", col=rgb(1,0,220/255, alpha=1), panel.first = grid(), cex=2, pch=16, type="p", xlim=c(0,200), ylim=c(0,200))  
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 4, fig.width = 4, fig.align = "center"}
+# plotting trajectory of a sample car in type 1:
+{
+  cars_of_this_type <- cars_type_1
+  car_IDs_of_this_type <- unique(cars_of_this_type$car.id)
+  n_cars_in_group <- length(car_IDs_of_this_type)
+  car_index_in_this_type <- 10
+  a_car_in_this_type <- cars_of_this_type[cars_of_this_type$car.id == car_IDs_of_this_type[car_index_in_this_type], ]
+  
+  plot_the_map()
+  # trajectory:
+  lines(x=a_car_in_this_type$x, y=a_car_in_this_type$y, type="l", lwd=3, col=adjustcolor("steelblue", alpha=1))
+  # starting point:
+  lines(x=a_car_in_this_type$x[1], y=a_car_in_this_type$y[1], type="p", col="steelblue", cex=5, pch=1, lwd=3)
+  # end point:
+  lines(x=tail(a_car_in_this_type$x, n=1), y=tail(a_car_in_this_type$y, n=1), type="p", col="steelblue", cex=4, pch=0, lwd=3)
+}
+```
+\captionof{figure}{The trajectory of a sample type-1 vehicle. The starting and ending points are shown by a circle and a square, respectively.}
+\label{figure_trajectory_sampleCar}
+
+## Analysis of Vehicle Traffic Based on Vehicle type
+
+### Analysis of Vehicle Trajectories Based on Vehicle type
+
+It is expected that most of the cars in the same type behave similarly and traverse similar paths. Therefore, for the cars of the same type, we plot the trajectory of the vehicles where the trajectories are transparent (alpha-blended) so that the trajectories which are repeated a lot get bold. In this way, the patterns of trajectories show off. The starting and end points are also shown so that we understand where the cars of a type have started and ended their trajectories. These trajectories are shown in Fig. \ref{figure_trajectories_cars_of_types}. 
+
+\bigbreak
+In the following, we analyze the trajectories of every vehicle type:
+
+* \textbf{Type 1:}  
+    - Entering and leaving: Most of vehicles enter and leave from the entrance gates which is expected. However, \textbf{some of the trajectories end at the camping gates or a general gate}. This is unusual meaning that not any more passage is recorded after they have camped. This shows that some suspecious activities might have been done there.
+    - Middle passed gates: The vehicles have passed through camping and general gates. This is expected because most of visitors, which come for camping, use type-1 vehicles. The middle ranger stops are also visited which is fine; however, \textbf{there is one trajectory passing the ranger stop at the top-left corner. This ranger stop is at the end of road and usually passes by rangers.} So, this activity is also suspecious.
+* \textbf{Type 2:}  
+    - Entering and leaving: Most of vehicles enter and leave from the entrance gates which is expected. However, \textbf{some of the trajectories end at some of the camping gates}. This is unusual and suspecious meaning that not any more passage is recorded after they have camped. 
+    - Maddile passed gates: The vehicles have passed through camping and general gates which is fine.
+* \textbf{Type 3:}  
+    - Entering and leaving: Most of vehicles enter and leave from the entrance gates which is expected. However, \textbf{some of the trajectories end at some of the camping gates}. This is unusual and suspecious meaning that not any more passage is recorded after they have camped. 
+    - Maddile passed gates: The vehicles have passed through camping and general gates which is fine.
+* \textbf{Type 4:}  
+    - Entering and leaving: All vehicles enter and leave from the entrance gates which is expected. 
+    - Maddile passed gates: The vehicles have not passed through camping gates which is expected because they are heavy vehicles used for construction, etc. Passing through general gates are also fine. \textbf{However, some vehicles have passed through gates which are only allowed to pass by the rangers. This definitely is illegal and suspecious. Moreover, some trajectories have visited the ranger stop at the end of road located at the up-right corner. This ranger stop is supposed to be passed mostly by rangers because of its location. This is also suspecious.}
+* \textbf{Type 5:}  
+    - Entering and leaving: Most of vehicles enter and leave from the entrance gates which is expected. \textbf{However, some of the vehicles have ended their trajectories at general gate in the middle of the preserve. This is completely unusual and suspecious.}
+    - Maddile passed gates: The vehicles have passed through general gates and middle ranger stops which is fine.
+* \textbf{Type 6:}  
+    - Entering and leaving: All vehicles enter and leave from the entrance gates which is expected. 
+    - Maddile passed gates: The vehicles have passed through general gates and middle ranger stops which is fine.
+* \textbf{Type 7:}  
+    - Entering and leaving: All vehicles enter and leave from the ranger base which is expected because vehicles of this type are all rangers.
+    - Maddile passed gates: The rangers are allowed to pass all gates. \textbf{However, not any ranger has visited and inspect two gates and a general gate in the east of the preserve. This gives some opportunity for the abusers to do some suspecious activities in the east of the preserve around those areas. The fact that they have missed those areas in their inspectations is also suspecious.}
+
+\bigbreak
+Moreover, the mean trajectory of the vehicles in a type might have interesting information. However, there is a problem that the lengths of trajectories are not necessarily equal. Therefore, we first find the longest trajectory of the vehicle type and then pad every trajectory of that type by repeating the last point of the trajectory at the end of it in order to make all trajectories of a type equal. Thereafter, we plot the mean trajectory on the map in order to show the overall behaviour of the vehicles of a type.
+
+\bigbreak
+We can see that the mean and the bold trajectories of the types 1, 2, and 3 are similar; and the trajectories of the types 4, 5, and 6 are similar. This makes sense because vehicles of types 1, 2, and 3 have smaller number of axles and the types 4, 5, and 6 are heavy vehicles with many axles. Also, we can see that the type-7 vehicles are visiting more places of the preserve which makes sense because they are supposed to inspect in the preserve.  
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# function for making the lengths of all trajectories similar to the longest length:
+make_trajectory_lengths_similarToLongestLength <- function(the_cars_data){
+  the_cars_data_extended <- the_cars_data
+  
+  car_IDs <- unique(the_cars_data$car.id)
+  n_cars <- length(car_IDs)
+  # find the length of longest trajectory:
+  max_length_trajectory <- 0
+  for(car_index in 1:n_cars){
+    a_car_data <- the_cars_data[the_cars_data$car.id == car_IDs[car_index], ]
+    length_trajectory <- nrow(a_car_data)
+    if(max_length_trajectory < length_trajectory){
+      max_length_trajectory <- length_trajectory
+    }
+  }
+  # repeat the end of short trajectories to reach the length of the longest trajectory:
+  #for(car_index in 1:n_cars){
+  #  a_car_data <- the_cars_data[the_cars_data$car.id == car_IDs[car_index], ]
+  #  length_trajectory <- nrow(a_car_data)
+  #  length_padding <- max_length_trajectory - length_trajectory
+  #  new_row <- a_car_data[length_trajectory, ]
+  #  new_row$x <- a_car_data[length_trajectory, ]$x
+  #  new_row$y <- a_car_data[length_trajectory, ]$y
+  #  for(new_row_index in 1:length_padding){
+  #    the_cars_data_extended <- rbind(the_cars_data_extended, new_row)
+  #  }
+  #}
+  # repeat the end of short trajectories to reach the length of the longest trajectory:
+  for(car_index in 1:n_cars){
+    a_car_data <- the_cars_data[the_cars_data$car.id == car_IDs[car_index], ]
+    length_trajectory <- nrow(a_car_data)
+    if(length_trajectory > max_length_trajectory){
+      print(length_trajectory)
+    }
+    
+    length_padding <- max_length_trajectory - length_trajectory
+    new_rows <- data.frame(Timestamp=rep(a_car_data[length_trajectory, ]$Timestamp, length_padding),
+                           car.id=rep(a_car_data[length_trajectory, ]$car.id, length_padding),
+                           car.type=rep(a_car_data[length_trajectory, ]$car.type, length_padding),
+                           gate.name=rep(a_car_data[length_trajectory, ]$gate.name, length_padding),
+                           x=rep(a_car_data[length_trajectory, ]$x, length_padding),
+                           y=rep(a_car_data[length_trajectory, ]$y, length_padding))
+    the_cars_data_extended <- rbind(the_cars_data_extended, new_rows)
+  }
+  return(the_cars_data_extended)
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# function for making the lengths of all trajectories similar to a specific length (the desired length should be longer than the longest trajectory):
+make_trajectory_lengths_specificLength <- function(the_cars_data, desired_length=500){
+  the_cars_data_extended <- the_cars_data
+  
+  car_IDs <- unique(the_cars_data$car.id)
+  n_cars <- length(car_IDs)
+  max_length_trajectory <- desired_length
+  # repeat the end of short trajectories to reach the length of the longest trajectory:
+  for(car_index in 1:n_cars){
+    a_car_data <- the_cars_data[the_cars_data$car.id == car_IDs[car_index], ]
+    length_trajectory <- nrow(a_car_data)
+    if(length_trajectory > max_length_trajectory){
+      print(length_trajectory)
+    }
+    
+    length_padding <- max_length_trajectory - length_trajectory
+    new_rows <- data.frame(Timestamp=rep(a_car_data[length_trajectory, ]$Timestamp, length_padding),
+                           car.id=rep(a_car_data[length_trajectory, ]$car.id, length_padding),
+                           car.type=rep(a_car_data[length_trajectory, ]$car.type, length_padding),
+                           gate.name=rep(a_car_data[length_trajectory, ]$gate.name, length_padding),
+                           x=rep(a_car_data[length_trajectory, ]$x, length_padding),
+                           y=rep(a_car_data[length_trajectory, ]$y, length_padding))
+    the_cars_data_extended <- rbind(the_cars_data_extended, new_rows)
+  }
+  return(the_cars_data_extended)
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# function for calculating the mean of trajectories:
+calculate_mean_of_trajectories <- function(the_cars_data){
+  car_IDs <- unique(the_cars_data$car.id)
+  n_cars <- length(car_IDs)
+  # for every car, create a vector containing x and then y coordinates. Then, put these vectors column wise in a matrix:
+  max_length_trajectory <- 0
+  the_matrix <- c()
+  for(car_index in 1:n_cars){
+    a_car_data <- the_cars_data[the_cars_data$car.id == car_IDs[car_index], ]
+    x_y_concatenated <- c(a_car_data$x, a_car_data$y)
+    the_matrix <- cbind(the_matrix, x_y_concatenated)
+  }
+  # calculate mean:
+  mean_of_x_y_concatenated <- rowMeans(the_matrix)
+  mean_x <- mean_of_x_y_concatenated[1:(length(mean_of_x_y_concatenated)/2)]
+  mean_y <- mean_of_x_y_concatenated[((length(mean_of_x_y_concatenated)/2)+1):length(mean_of_x_y_concatenated)]
+  return(list(mean_x, mean_y))
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE, fig.height = 10, fig.width = 10, fig.align = "center"}
+savePar <- par(mfrow=c(3,3),  mar=c(0, 0, 2, 0))
+
+include_mean_of_trajectories <- TRUE
+
+# plotting the trajectories of cars for different types:
+# As the number of cars is huge, it takes several minutes to run this block of code, so I run it once and put the result as an image in the report.
+{
+  for(car_type in 1:7){
+    print(paste("Plotting for car type ", car_type, sep=""))
+    title <- paste("Type ", car_type, " vehicles", sep="")
+    plot_the_map(title=title)
+    if(car_type == 1){
+      cars_of_this_type <- cars_type_1
+    }
+    else if(car_type == 2){
+      cars_of_this_type <- cars_type_2
+    }
+    else if(car_type == 3){
+      cars_of_this_type <- cars_type_3
+    }
+    else if(car_type == 4){
+      cars_of_this_type <- cars_type_4
+    }
+    else if(car_type == 5){
+      cars_of_this_type <- cars_type_5
+    }
+    else if(car_type == 6){
+      cars_of_this_type <- cars_type_6
+    }
+    else if(car_type == 7){
+      cars_of_this_type <- cars_type_2P
+    }
+    
+    # plot the trajectories:
+    car_IDs_of_this_type <- unique(cars_of_this_type$car.id)
+    n_cars_in_group <- length(car_IDs_of_this_type)
+    for(car_index_in_this_type in 1:n_cars_in_group){
+      a_car_in_this_type <- cars_of_this_type[cars_of_this_type$car.id == car_IDs_of_this_type[car_index_in_this_type], ]
+      
+      # trajectory:
+      lines(x=a_car_in_this_type$x, y=a_car_in_this_type$y, type="l", lwd=3, col=adjustcolor("steelblue", alpha=0.1))
+      # starting point:
+      lines(x=a_car_in_this_type$x[1], y=a_car_in_this_type$y[1], type="p", col="steelblue", cex=5, pch=1, lwd=3)
+      # end point:
+      lines(x=tail(a_car_in_this_type$x, n=1), y=tail(a_car_in_this_type$y, n=1), type="p", col="steelblue", cex=4, pch=0, lwd=3)
+    }
+    
+    # plot the mean of the trajectories of cars in this type:
+    if(include_mean_of_trajectories == TRUE){
+      cars_of_this_type_extended_lengths <- make_trajectory_lengths_similarToLongestLength(cars_of_this_type[1:500,])
+      mean_trajectory <- calculate_mean_of_trajectories(cars_of_this_type_extended_lengths)
+      # trajectory:
+      lines(x=mean_trajectory[[1]], y=mean_trajectory[[2]], type="l", lwd=3, col=adjustcolor("red", alpha=1))
+      # starting point:
+      lines(x=mean_trajectory[[1]][1], y=mean_trajectory[[2]][1], type="p", col="red", cex=5, pch=1, lwd=3)
+      # end point:
+      lines(x=tail(mean_trajectory[[1]], n=1), y=tail(mean_trajectory[[2]], n=1), type="p", col="red", cex=4, pch=0, lwd=3)
+    
+      # save the mean trajectories for possible future use:
+      address_file <- getwd()
+      address_file <- paste(address_file, "/Dataset/Dataset1/mySavings/mean_of_types/", "type", car_type, "/mean_trajectory.RData", sep="")
+      save(mean_trajectory, file = address_file)
+      
+      address_file <- getwd()
+      address_file <- paste(address_file, "/Dataset/Dataset1/mySavings/equal_lengths_of_types/", "type", car_type, "/cars_of_this_type_extended_lengths.RData", sep="")
+      save(cars_of_this_type_extended_lengths, file = address_file)
+    }
+    
+  }
+}
+
+par(savePar)
+```
+    
+\begin{center}
+\includegraphics[width=0.8\textwidth]{./images/trajectories_cars_of_types_withMeans}
+\captionof{figure}{The trajectories of vehicles in different types. The trajectory of every vehicle is shown by transparent blue color so that patterns and repeats can be obvious by bold blue color. The red trajectory is the mean trajectory of the cars in that type.}
+\label{figure_trajectories_cars_of_types}
+\end{center}
+
+### Analysis of Traffic Time Based on Vehicle type
+
+In order to analyze the data of traffic in terms of time, we plot the histogram of the dates when the vehicles of different types have passed through the preserve. These histograms for different types of vehicles are shown in Fig. \ref{figure_hist_dates_carsInTypes}.
+
+In the following, we list the analysis of the histograms:
+
+* The histogram of types 1, 2, and 3 are similar, whereas the patterns of histograms of types 4, 5, and 6 are similar. This makes sense because vehicles of types 1, 2, and 3 have smaller number of axles and the types 4, 5, and 6 are heavy vehicles with many axles.
+
+* As expected, the rangers (type 7) have visited the preserve regularly in different times because they are supposed to inspect in the preserve in a regular schedule.  
+
+* The number of vehicle records in the first types is much more than the number of last types of cars. This makes sense because the preserve is visited more by ordinary visitors than the construction trucks.
+
+* \textbf{Around June 2015, the traffic of all types of vehicles has increased a lot. This might be distructive to the nature preserve or might have had bad effects on the quality of life of flora and fauna in the preserve.}
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 10, fig.width = 10, fig.align = "center"}
+# plot the histogram of dates of the cars in clusters:
+savePar <- par(mfrow=c(3,3),  mar=c(7, 4, 2, 1))
+{
+  for(car_type in 1:7){
+    if(car_type == 1){
+      cars_of_this_type <- cars_type_1
+    }
+    else if(car_type == 2){
+      cars_of_this_type <- cars_type_2
+    }
+    else if(car_type == 3){
+      cars_of_this_type <- cars_type_3
+    }
+    else if(car_type == 4){
+      cars_of_this_type <- cars_type_4
+    }
+    else if(car_type == 5){
+      cars_of_this_type <- cars_type_5
+    }
+    else if(car_type == 6){
+      cars_of_this_type <- cars_type_6
+    }
+    else if(car_type == 7){
+      cars_of_this_type <- cars_type_2P
+    }
+    title <- paste("Type ", car_type, " vehicles", sep="")
+    soonest_date_of_cluster <- as.POSIXct( sort(cars_of_this_type$Timestamp)[1] )
+    latest_date_of_cluster <- as.POSIXct( tail(sort(cars_of_this_type$Timestamp), n=1) )
+    # https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/hist.POSIXt.html
+    hist(as.Date(cars_of_this_type$Timestamp), "months", freq = TRUE, main=title, las=2, xlab="", ylab="")
+  }
+}
+par(savePar)
+```
+\captionof{figure}{The histogram of the dates when the vehicles of different types have passed through the preserve.}
+\label{figure_hist_dates_carsInTypes}
+
+## Analysis of Vehicle Traffic Based on Traffic Clusters
+
+Another way of analyzing the data is to cluster the traffic and then analyze the behaviours of the clusters rather than comparing the types of vehicles. 
+
+### Clustering the Traffic
+
+As the given data is huge and its processing takes a significant amount of time, we sample randomly from the data in order to have a subset of data. For fair sampling, we randomly choose $100$ vehicles from every type and extract the data and time series of those cars from the dataset. This sampling is \textbf{stratified sampling} where the strata are the types of vehicles. We know that stratified sampling is better than simple random sampling in terms of variance of estimation [@barnett1974elements]. 
+
+\bigbreak
+After sampling from the dataset, we make the lengths of trajectories of the sampled vehicles equal by padding the last visiting point to the end of short trajectories. Then, we concatenate the $x$ and $y$ coordinates of the visited gates to make the trajectory of every vehicle as a vector. Putting the vectors of trajectories next to each other gives us a matrix.
+
+\bigbreak
+Afterwards, we apply Principal Component Analysis (PCA) [@friedman2001elements] on this matrix-form data. The scree plot of the eigenvalues, which shows $\frac{\lambda_i}{\sum_j \lambda_j}$, is shown in Fig. \ref{figure_scree_plot}. As can be seen, the first $20$ eigenvectors seem to carry most of the information of variation of data. Therefore, we take the first $20$ principal axes and after projecting data onto these principal axes, we obtain the $20$-dimensional projected trajectories. 
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# sample from the cars (because number of cars is huge):
+numberOf_carsOfEachType_in_subset <- 100
+{
+  subset_of_cars <- c()
+  for(car_type in 1:7){
+    # take the cars of a type:
+    print(paste("Processing car type ", car_type, sep=""))
+    if(car_type == 1){
+      cars_of_this_type <- cars_type_1
+    }
+    else if(car_type == 2){
+      cars_of_this_type <- cars_type_2
+    }
+    else if(car_type == 3){
+      cars_of_this_type <- cars_type_3
+    }
+    else if(car_type == 4){
+      cars_of_this_type <- cars_type_4
+    }
+    else if(car_type == 5){
+      cars_of_this_type <- cars_type_5
+    }
+    else if(car_type == 6){
+      cars_of_this_type <- cars_type_6
+    }
+    else if(car_type == 7){
+      cars_of_this_type <- cars_type_2P
+    }
+    
+    # sample from the cars:
+    IDs_of_cars_in_this_type <- unique(cars_of_this_type$car.id)
+    n_cars_in_group <- length(IDs_of_cars_in_this_type)
+    indices_of_selected_cars_in_this_type <- sample(x=c(1:n_cars_in_group), size=numberOf_carsOfEachType_in_subset, replace = FALSE)
+    IDs_of_selected_cars_in_this_type <- IDs_of_cars_in_this_type[indices_of_selected_cars_in_this_type]
+    for(ID in IDs_of_selected_cars_in_this_type){
+        subset_of_cars <- rbind(subset_of_cars, cars_of_this_type[cars_of_this_type$car.id == ID, ])
+      }
+  }
+  subset_of_cars
+  
+  # save the subset_of_cars:
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset1/mySavings/subset_of_cars.RData", sep="/")
+  save(subset_of_cars, file = address_file)
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# load the saved subset of cars:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset1/mySavings/subset_of_cars.RData", sep="/")
+  load(file = address_file)
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# make the lengths of trajectories in the subset, similar:
+make_length_equal_again <- FALSE
+{
+  if(make_length_equal_again == TRUE){
+    subset_of_cars_equalTrajectoryLengths <- make_trajectory_lengths_similarToLongestLength(subset_of_cars)
+    # save:
+    address_file <- getwd()
+    address_file <- paste(address_file, "Dataset/Dataset1/mySavings/subset_of_cars_equalTrajectoryLengths.RData", sep="/")
+    save(subset_of_cars_equalTrajectoryLengths, file = address_file)
+  }else{
+    # load:
+    address_file <- getwd()
+    address_file <- paste(address_file, "Dataset/Dataset1/mySavings/subset_of_cars_equalTrajectoryLengths.RData", sep="/")
+    load(file = address_file)
+  }
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# make the trajectories of cars in the subset as vectors: --> for each trajectory vector: the first half of vectors are x coordinates and the second half of vector contains the y coordinates of the trajectory.
+make_trajectories_as_vectors_again <- FALSE
+{
+  if(make_trajectories_as_vectors_again == TRUE){
+    car_IDs_in_subset <- unique(subset_of_cars_equalTrajectoryLengths$car.id)
+    n_cars_in_subset <- length(car_IDs_in_subset)
+    # for every car, create a vector containing x and then y coordinates. Then, put these vectors column-wise in a matrix:
+    matrix_cars_in_subset <- c()
+    for(car_index in 1:n_cars_in_subset){
+      a_car_data_in_subset <- subset_of_cars_equalTrajectoryLengths[subset_of_cars_equalTrajectoryLengths$car.id == car_IDs_in_subset[car_index], ]
+      x_y_concatenated <- c(a_car_data_in_subset$x, a_car_data_in_subset$y)
+      matrix_cars_in_subset <- cbind(matrix_cars_in_subset, x_y_concatenated)
+    }
+    colnames(matrix_cars_in_subset) <- NULL
+    # save:
+    address_file <- getwd()
+    address_file <- paste(address_file, "Dataset/Dataset1/mySavings/matrix_cars_in_subset.RData", sep="/")
+    save(matrix_cars_in_subset, file = address_file)
+  }else{
+    # load:
+    address_file <- getwd()
+    address_file <- paste(address_file, "Dataset/Dataset1/mySavings/matrix_cars_in_subset.RData", sep="/")
+    load(file = address_file)  
+  }
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# PCA on trajectory data of the subset:
+{
+  #------- studentizing data:
+  matrix_cars_in_subset_studentized <- scale(matrix_cars_in_subset, center=TRUE, scale=TRUE)
+  #------- SVD on data:
+  svd_matrix_cars_in_subset <- svd(matrix_cars_in_subset_studentized)
+  svd_u <- svd_matrix_cars_in_subset$u
+  svd_d <- svd_matrix_cars_in_subset$d
+  #------- scree plot
+  show_until_what_eigenvalue <- 30  # out of 98
+  barplot(svd_d[1:show_until_what_eigenvalue]/sum(svd_d), border="red", col="blue", density=20, names.arg=c(1:show_until_what_eigenvalue), las=2, xlab="eigenvector index", ylab="eigenvalue divided by sum of eigenvalues", ylim=c(0,0.5))
+  abline(v=24, lwd=3, col="blue", lty=2)
+  #------- take the first 20 principal axes:
+  pc_matrix_cars_in_subset <- svd_u[, 1:20]
+  #------- project onto first 20 principal axes:
+  matrix_cars_in_subset_projected <- t(pc_matrix_cars_in_subset) %*% matrix_cars_in_subset_studentized 
+}
+```
+\captionof{figure}{Scree plot for determining the number of principal axes to choose.}
+\label{figure_scree_plot}
+
+\bigbreak
+After applying PCA on data, we cluster the trajectories using K-means method [@friedman2001elements]. The number of clusters is reasonable to be $7$ because of seven different number of types of vehicles. The pairs plot (scatter plot matrix) of the first five dimensions of the projected data onto PCA subspace is shown in Fig. \ref{figure_pairs_plot_clusters_of_projectedData}. Every point in a scatter plot is the trajectory of a car. The points in this figure are color-coded according to their assigned clusters. As can be seen in this pairs plot, the clusters contain trajectories with different characteristics and values of dimensions. Hence, the clusters are properly dividing the trajectories into several groups.  
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# clustering the projected data:
+do_cluster_again <- FALSE
+{
+  if(do_cluster_again){
+    clusters <- kmeans(t(matrix_cars_in_subset_projected), centers=7)
+    #str(clusters)
+    # save:
+    address_file <- getwd()
+    address_file <- paste(address_file, "Dataset/Dataset1/mySavings/clusters.RData", sep="/")
+    save(clusters, file = address_file)
+  }else{
+    # load:
+    address_file <- getwd()
+    address_file <- paste(address_file, "Dataset/Dataset1/mySavings/clusters.RData", sep="/")
+    load(file = address_file)
+  }
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# plot the pairs plot of the projected data:
+pairs(t(matrix_cars_in_subset_projected[1:5,]), col=clusters$cluster)
+```
+\captionof{figure}{Pairs plot of the first five dimensions of the data projected onto PCA subspace. The data of different clusters are color-coded.}
+\label{figure_pairs_plot_clusters_of_projectedData}
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# add cluster index to the dataframe of the subset of cars:
+{
+  if(do_cluster_again){
+    car_IDs_in_subset <- unique(subset_of_cars_equalTrajectoryLengths$car.id)
+    n_cars_in_subset <- length(car_IDs_in_subset)
+    matrix_cars_in_subset <- c()
+    for(car_index in 1:n_cars_in_subset){
+      subset_of_cars_equalTrajectoryLengths[subset_of_cars_equalTrajectoryLengths$car.id == car_IDs_in_subset[car_index], "cluster"] <- clusters$cluster[car_index]
+    }
+    # save:
+    address_file <- getwd()
+    address_file <- paste(address_file, "Dataset/Dataset1/mySavings/subset_of_cars_equalTrajectoryLengths.RData", sep="/")
+    save(subset_of_cars_equalTrajectoryLengths, file = address_file)
+  }else{
+    # load:
+    address_file <- getwd()
+    address_file <- paste(address_file, "Dataset/Dataset1/mySavings/subset_of_cars_equalTrajectoryLengths.RData", sep="/")
+    load(file = address_file)
+  }
+  
+}
+```
+
+\bigbreak
+In order to see the proportion of the number of vehicles of different types in every cluster, we plot the heat map of cardinality of each cluster in Fig. \ref{figure_heatmap_n_cars_cluster_vs_types}. As this figure shows, the rangers are mostly in one of the clusters, i.e., cluster 5. This makes sense because the behaviour of rangers, who should inspect in the preserve, is very different from othet vehicles. Other types of vehicles are alomost spread uniformly in the clusters because of close behaviour. This does not hurt our analysis because even some small variations between these clusters may have important information for us to discover. 
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 6, fig.width = 10, fig.align = "center"}
+# find the number of cars in each cluster and type:
+{
+  n_cars_RowsCluster_ColumnsTypes <- matrix(nrow=7, ncol=7)
+  for(cluster_index in 1:7){
+    for(type_index in 1:7){
+      if(type_index == 7){
+        type_index_ <- "2P"
+      }else{
+        type_index_ <- type_index
+      }
+      mask <- (subset_of_cars_equalTrajectoryLengths$cluster == cluster_index) & (subset_of_cars_equalTrajectoryLengths$car.type == type_index_)
+      n_cars_RowsCluster_ColumnsTypes[cluster_index, type_index] <- nrow(subset_of_cars_equalTrajectoryLengths[mask, ])
+    }
+  }
+  # normalize (scale):
+  for(cluster_index in 1:7){
+    n_cars_RowsCluster_ColumnsTypes[cluster_index,] <- n_cars_RowsCluster_ColumnsTypes[cluster_index,] / sum(n_cars_RowsCluster_ColumnsTypes[cluster_index,])
+  }
+}
+
+# plot the heatmap of number of cars in each cluster and type:
+{
+  rownames(n_cars_RowsCluster_ColumnsTypes) <- c("cluster 1", "cluster 2", "cluster 3", "cluster 4", "cluster 5", "cluster 6", "cluster 7")
+  colnames(n_cars_RowsCluster_ColumnsTypes) <- c("type 1", "type 2", "type 3", "type 4", "type 5", "type 6", "type 7")
+  library("lattice")
+  ## http://www.r-graph-gallery.com/28-turn-y-axis-upside-down-in-levelplot
+  ## http://www.r-graph-gallery.com/27-levelplot-with-lattice/
+  par(mar=c(3,4,2,2))
+  levelplot(n_cars_RowsCluster_ColumnsTypes, col.regions = heat.colors(100)[length(heat.colors(100)):1], xlab="Clusters", ylab="Types of vehicles")
+}
+```
+\captionof{figure}{Heat map of the proportion of cars of every type in different clusters.}
+\label{figure_heatmap_n_cars_cluster_vs_types}
+
+### Analysis of Vehicle Trajectories Based on Traffic Clusters
+
+For the cars of the same cluster, we plot the trajectory of the vehicles where the trajectories are transparent (alpha-blended) so that the trajectories which are repeated a lot get bold and pattern show off. The starting and end points are also shown so that we understand where the cars of a type have started and ended their trajectories. These trajectories are shown in Fig. \ref{figure_trajectories_cars_of_clusters}. The mean trajectories of clusters are alos shown in this figure.
+
+\bigbreak
+In the following, we analyze the trajectories of every cluster:
+
+* Clusters 1, 6, and 7 do not visit ranger base which makes sense because according to Fig. \ref{figure_heatmap_n_cars_cluster_vs_types}, they do not include any ranger. 
+
+* Cluster 5 mostly covers all the preserve, especially observed by looking at the mean trajectory. This makes sense because according to Fig. \ref{figure_heatmap_n_cars_cluster_vs_types}, this cluster mostly includes rangers who are reponsible to inspect in all regions of the preserve. 
+
+* \textbf{Cluster 5, which mostly includes the rangers, is missing visiting the regions in the east of preserve. This is especially observed by the mean trajectory. This gives the abusers an opportunity to do suspecious activities in the east of the preserve.} This coincides with our observation in type-7 vehicles in Fig. \ref{figure_trajectories_cars_of_types}. 
+
+* Clusters 2 and 3 almost visit all regions which makes sense because according to Fig. \ref{figure_heatmap_n_cars_cluster_vs_types}, they include vehicles from all clusters. However, the pattern of clusters 2 and 3 is different from pattern of cluster 5 in terms of the mean trajectory. the mean trajectories of clusters 2 and 3 do not cover as much area as the mean trajectory of cluster 5. This is because they are not merely containing rangers.
+
+* \textbf{Except clusters 2 and 3, all clusters do not concentrate on the east. This is strange. Also, by noticing that trajectories of cluster 5 (rangers) do not concentrate on the east, we can conclude that vehicles visiting the east in clusters 2 and 3 are not rangers. This gives us an alert that some non-ranger vehicles have visited the east a lot while the rangers have not inspected there. Hence, some suspecious activities might have happened there.}
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE, fig.height = 10, fig.width = 10, fig.align = "center"}
+# plot the trajectory of the cars in clusters:
+savePar <- par(mfrow=c(3,3),  mar=c(0, 0, 2, 0))
+include_mean_of_trajectories <- TRUE
+{
+  n_clusters <- length(unique(subset_of_cars_equalTrajectoryLengths$cluster))
+  for(cluster_index in 1:n_clusters){
+    #print(paste("Plotting for car type ", car_type, sep=""))
+    title <- paste("Cluster ", cluster_index, sep="")
+    plot_the_map(title=title)
+    
+    cars_of_this_cluster <- subset_of_cars_equalTrajectoryLengths[subset_of_cars_equalTrajectoryLengths$cluster == cluster_index, ]
+    
+    # plot the trajectories:
+    car_IDs_of_this_cluster <- unique(cars_of_this_cluster$car.id)
+    n_cars_in_cluster <- length(car_IDs_of_this_cluster)
+    for(car_index_in_this_cluster in 1:n_cars_in_cluster){
+      a_car_in_this_cluster <- cars_of_this_cluster[cars_of_this_cluster$car.id == car_IDs_of_this_cluster[car_index_in_this_cluster], ]
+      
+      # trajectory:
+      lines(x=a_car_in_this_cluster$x, y=a_car_in_this_cluster$y, type="l", lwd=3, col=adjustcolor("steelblue", alpha=0.1))
+      # starting point:
+      lines(x=a_car_in_this_cluster$x[1], y=a_car_in_this_cluster$y[1], type="p", col="steelblue", cex=5, pch=1, lwd=3)
+      # end point:
+      lines(x=tail(a_car_in_this_cluster$x, n=1), y=tail(a_car_in_this_cluster$y, n=1), type="p", col="steelblue", cex=4, pch=0, lwd=3)
+    }
+    
+    # plot the mean of the trajectories of cars in this type:
+    if(include_mean_of_trajectories == TRUE){
+      mean_trajectory <- calculate_mean_of_trajectories(cars_of_this_cluster)
+      # trajectory:
+      lines(x=mean_trajectory[[1]], y=mean_trajectory[[2]], type="l", lwd=3, col=adjustcolor("red", alpha=1))
+      # starting point:
+      lines(x=mean_trajectory[[1]][1], y=mean_trajectory[[2]][1], type="p", col="red", cex=5, pch=1, lwd=3)
+      # end point:
+      lines(x=tail(mean_trajectory[[1]], n=1), y=tail(mean_trajectory[[2]], n=1), type="p", col="red", cex=4, pch=0, lwd=3)
+    
+      # save the mean trajectories for possible future use:
+      address_file <- getwd()
+      address_file <- paste(address_file, "/Dataset/Dataset1/mySavings/mean_of_clusters/", "type", car_type, "/mean_trajectory.RData", sep="")
+      save(mean_trajectory, file = address_file)
+    }
+  }
+}
+par(savePar)
+```
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{./images/trajectories_cars_of_clusters_withMeans}
+\captionof{figure}{The trajectories of vehicles in different clusters. The trajectory of every vehicle is shown by transparent blue color so that patterns and repeats can be obvious by bold blue color. The red trajectory is the mean trajectory of the cars in that cluster.}
+\label{figure_trajectories_cars_of_clusters}
+\end{center}
+    
+### Analysis of Traffic Time Based on Traffic Clusters
+    
+In order to analyze the data of traffic in terms of time, we plot the histogram of the dates when the vehicles of different clusters have passed through the preserve. These histograms for different clusters are shown in Fig. \ref{figure_hist_dates_carsInClusters}.
+
+\bigbreak
+In the following, we analyze of the histograms:
+
+* Cluster 5 visits the preserve in various times. This makes sense because this cluster includes rangers nad the rangers ar esupposed to visit the preserve regularly.
+
+* \textbf{All clusters except cluster 5 mostly have visited the preserve around June 2015. This might be distructive to the nature preserve or might have had bad effects on the quality of life of flora and fauna in the preserve.} This observation coincides with our observation from Fig. \ref{figure_hist_dates_carsInTypes}.
+    
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 10, fig.width = 10, fig.align = "center"}
+# plot the histogram of dates of the cars in clusters:
+savePar <- par(mfrow=c(3,3),  mar=c(7, 3, 2, 1))
+{
+  n_clusters <- length(unique(subset_of_cars_equalTrajectoryLengths$cluster))
+  for(cluster_index in 1:n_clusters){
+    cars_of_this_cluster <- subset_of_cars_equalTrajectoryLengths[subset_of_cars_equalTrajectoryLengths$cluster == cluster_index, ]
+    title <- paste("Cluster ", cluster_index, sep="")
+    soonest_date_of_cluster <- as.POSIXct( sort(cars_of_this_cluster$Timestamp)[1] )
+    latest_date_of_cluster <- as.POSIXct( tail(sort(cars_of_this_cluster$Timestamp), n=1) )
+    # https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/hist.POSIXt.html
+    hist(as.Date(cars_of_this_cluster$Timestamp), "months", freq = TRUE, main=title, las=2, xlab="", ylab="")
+  }
+}
+par(savePar)
+```
+\captionof{figure}{The histogram of the dates when the vehicles of different clusters have passed through the preserve.}
+\label{figure_hist_dates_carsInClusters} 
+    
+    
+    
+
+    
+# Analysis of Impact of Surrounding Factories
+
+## Manufacturing Factories and The Sensors
+
+The data subset 2 provides us the data of nine sensors recording four different chemicals. The nine sensors are located at the south of the preserve. These sensors are depicted in Fig. \ref{figure_map}. The four chemicals recorded by these sensors are Appluimonia, Chlorodinine, Methylosmolene, and AGOC-3A. The characteristics of these chemicals are mentioned in Table \ref{table_chemicals}. As reported in this table, Chlorodinine and Methylosmolene are more dangerous chemicals.
+
+\bigbreak
+Four manufacturing factories are also located in the south of the preserve, surrounded by the nine sensors. The location of these plants are also shown in Fig. \ref{figure_map}. The coordinates and the products of these factories are reported in Table \ref{table_factories}. As seen in this table, the two factories Kasios Office Furniture and Radiance ColourTek seem to be more risky to environment compared to Roadrunner Fitness Electronics  and Indigo Sol Boards.
+
+\bigbreak
+
+\begin{center}
+\begin{tabular}{l | l}
+\hline
+\hline
+\textbf{Chemical} & \textbf{Characteristics}\\
+\hline
+\hline
+Appluimonia & Airborne odor, not serious injury, influences life quality\\
+\hline
+Chlorodinine & Corrodes body tissues, harmful if inhaled or swallowed, used for sterilizing\\
+\hline
+Methylosmolene & Volatile organic solvent, toxic side effects, must be neutralized before disposal\\
+\hline
+AGOC-3A & Environment friendly solvents, less harmfull, low Volatile Organic Compound (VOC)\\
+\hline
+\hline
+\end{tabular}
+\captionof{table}{Chemicals recorded by the sensors.}
+\label{table_chemicals}
+\end{center}
+
+\bigbreak
+
+\begin{center}
+\begin{tabular}{l | c | l}
+\hline
+\hline
+\textbf{Company} & \textbf{Coordinate} & \textbf{Production}\\
+\hline
+\hline
+Roadrunner Fitness Electronics & (89,27) & Fitness trackers, heart rate monitors, sport-related products\\
+\hline
+Kasios Office Furniture & (90,21) & Metal and composite-wood office furniture\\
+\hline
+Radiance ColourTek & (109,26) & Solvent-based metallic flake paints\\
+\hline
+Indigo Sol Boards & (120,22) & Skate-boards and snow-boards\\
+\hline
+\hline
+\end{tabular}
+\captionof{table}{Manufacturing factories near the nature preserve.}
+\label{table_factories}
+\end{center}
+
+
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# read the excel file:
+{
+  library("readxl")
+  sensor_data <- read_excel("./Dataset/Dataset2/Sensor_Data.xlsx") 
+  #print(sensor_data[1:100,])
+}
+
+# convert to matrix:
+{
+  # https://stat.ethz.ch/pipermail/r-help/2012-July/319209.html
+  sensor_data_matrix <- as.matrix(sensor_data)  
+  colnames(sensor_data_matrix) <- NULL  # remove the header
+}
+
+# the sample size of sensors data:
+n_samples_sensor <- dim(sensor_data_matrix)[1]
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# categorize the sensors data based on sensors (monitors):
+{
+  categorized_by_sensors <- vector(mode="list", length=9)  # nine sensors
+  for(index in 1:n_samples_sensor){
+    sensor_index <- as.numeric(sensor_data_matrix[index, 2])
+    categorized_by_sensors[[sensor_index]] <- rbind(categorized_by_sensors[[sensor_index]], c(sensor_data[index,1], sensor_data[index,3], sensor_data[index,4])) 
+  }
+  #head(categorized_by_sensors[[1]])
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# save the categorized_by_sensors:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/categorized_by_sensors.RData", sep="/")
+  save(categorized_by_sensors, file = address_file)
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# load the categorized_by_sensors:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/categorized_by_sensors.RData", sep="/")
+  load(file = address_file)
+}
+```
+
+## Analysis of Sensors' Performance
+
+By carefully observing the data of sensors, we figure out that the sensors have some lacks and failures in their records. In other words, at every time slot, the sensor is supposed to record the four chemical values. For every sensor, we check whether all the chemicals have been recorded or not. The ridge plot (Joyplot) of the sensor failures in recording from the chemicals is shown in Fig. \ref{figure_sensor_performance_ridgePlot}. As can be seen in this plot: 
+
+* \textbf{Mostly Methylosmolene is not recorded at some time slots.}
+
+* \textbf{Sensor 1 does not have any failure but other sensors have failed in recording Methylosmolene at some times.}
+
+* \textbf{The more strange fact is that these failures have occured mostly at three time periods, i.e., April and June 2016, August and September 2016, and December 2016. The sensors have failed at the same times. Probably this has happened because of a problem in the electricity or supplies of the sensors.}
+
+\bigbreak
+Note that some more analysis of the sensors' performance is done inthe following sections.
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# for every sensor: 
+# creating 4D points, where each point is a specific time slot and each dimension is the chemical measured in that time (we have 4 chemicals) 
+# ---> access the matrix as: sensor_readings_inTimeSlots[[sensor_index]][point_index, chemical index]
+# and creating a vector of time slots corresponding to the 4D points 
+# ---> access the matrix as: sensor_times[[sensor_index]][[point_index]]
+# ---> the number of records for a sensor: dim(sensor_readings_inTimeSlots[[sensor_index]])[1]
+
+# Also, this code finds the chemicals and the time slots where the chemical has not been recorded by the sensor.
+# ---> access the list of missing chemical records as: sensor_bugs_notRecording[[sensor_index]]$data[point_index]
+# ---> access the list of times of missing records as: sensor_bugs_notRecording[[sensor_index]]$time[[point_index]]
+# ---> the number of missing records for a sensor: length(sensor_bugs_notRecording[[sensor_index]]$data)
+
+{
+  sensor_readings_inTimeSlots <- vector(mode="list", length=9)  # nine sensors
+  sensor_times <- vector(mode="list", length=9)  # nine sensors
+  sensor_bugs_notRecording <- vector(mode="list", length=9)  # nine sensors
+  chemicals <- c("Appluimonia", "Chlorodinine", "Methylosmolene", "AGOC-3A")
+  library(pracma)
+  # loop on the sensors:
+  for(sensor_index in 1:9){
+    sensor_times_a_sensor <- c()
+    data_of_a_sensor <- categorized_by_sensors[[sensor_index]]
+    data_of_aSensor_aTimeSlot <- c()
+    row_index <- 1
+    previous_time <- 0
+    while(row_index <= dim(data_of_a_sensor)[1]){
+      the_time <- data_of_a_sensor[row_index, 2]
+      if(row_index == 1 || strcmp(as.character(the_time), as.character(previous_time))){
+        # add to the data of that time slot:
+        data_of_aSensor_aTimeSlot <- rbind(data_of_aSensor_aTimeSlot, data_of_a_sensor[row_index,])
+      }
+      else{ # the data of a time slot has been completely taken, so:
+        reading_vector <- c()
+        valid_point <- TRUE
+        for(chemical_index in 1:4){
+          chemical <- chemicals[chemical_index]
+          if(length(unlist(data_of_aSensor_aTimeSlot)) != 3){
+            a_chemical_of_a_sensor_aTimeSlot <- data_of_aSensor_aTimeSlot[data_of_aSensor_aTimeSlot[,1] == chemical,]
+          }
+          else{
+            # means that only one chemical has been recorded in that time slot by that sensor:
+            a_chemical_of_a_sensor_aTimeSlot <- data_of_aSensor_aTimeSlot[data_of_aSensor_aTimeSlot[1] == chemical]
+          }
+          
+          if(length(a_chemical_of_a_sensor_aTimeSlot) == 0){
+            # this chemical is not recorded for this time slot by this sensor:
+            valid_point <- FALSE
+            sensor_bugs_notRecording[[sensor_index]]$data <- c(sensor_bugs_notRecording[[sensor_index]]$data, chemical)
+            if(length(data_of_aSensor_aTimeSlot) != 3){
+              sensor_bugs_notRecording[[sensor_index]]$time <- c(sensor_bugs_notRecording[[sensor_index]]$time, data_of_aSensor_aTimeSlot[1,2])
+            }
+            else{
+              # means that only one chemical has been recorded in that time slot by that sensor:
+              sensor_bugs_notRecording[[sensor_index]]$time <- c(sensor_bugs_notRecording[[sensor_index]]$time, data_of_aSensor_aTimeSlot[2])
+            }
+            break
+          }
+          a_chemical_of_a_sensor_aTimeSlot_unlisted <- unlist(a_chemical_of_a_sensor_aTimeSlot)
+          reading_of_a_sensor_aTimeSlot <- as.numeric(a_chemical_of_a_sensor_aTimeSlot_unlisted[3])
+          reading_vector <- c(reading_vector, reading_of_a_sensor_aTimeSlot)
+        }
+        # matrix of 4D points:
+        if(valid_point == TRUE){
+          sensor_readings_inTimeSlots[[sensor_index]] <- rbind(sensor_readings_inTimeSlots[[sensor_index]], reading_vector)
+          rownames(sensor_readings_inTimeSlots[[sensor_index]]) <- NULL
+          # time vector:
+          time_of_a_sensor <- a_chemical_of_a_sensor_aTimeSlot[2]
+          sensor_times_a_sensor <- c(sensor_times_a_sensor, time_of_a_sensor)
+        }
+        # restart collecting the data of the new time slot:
+        data_of_aSensor_aTimeSlot <- data_of_a_sensor[row_index,]
+      }
+      colnames(data_of_aSensor_aTimeSlot) <- NULL
+      rownames(data_of_aSensor_aTimeSlot) <- NULL
+      row_index <- row_index + 1
+      previous_time <- the_time
+    }
+    sensor_times[[sensor_index]] <- sensor_times_a_sensor
+    rownames(sensor_times[[sensor_index]]) <- NULL
+    colnames(sensor_readings_inTimeSlots[[sensor_index]]) <- chemicals
+  }
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# save the 4D points and the time vectors and the missing records:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/sensor_readings_inTimeSlots.RData", sep="/")
+  save(sensor_readings_inTimeSlots, file = address_file)
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/sensor_times.RData", sep="/")
+  save(sensor_times, file = address_file)
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/sensor_bugs_notRecording.RData", sep="/")
+  save(sensor_bugs_notRecording, file = address_file)
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# load the 4D points and the time vectors and the missing records:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/sensor_readings_inTimeSlots.RData", sep="/")
+  load(file = address_file)
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/sensor_times.RData", sep="/")
+  load(file = address_file)
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/sensor_bugs_notRecording.RData", sep="/")
+  load(file = address_file)
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# creating data frame of sensor_bugs_notRecording_dataframe having components:
+# $sensor_index
+# $reading
+# $time
+{
+  sensor_index <- c(rep(1, times=length(sensor_bugs_notRecording[[1]]$data)),
+                    rep(2, times=length(sensor_bugs_notRecording[[2]]$data)),
+                    rep(3, times=length(sensor_bugs_notRecording[[3]]$data)),
+                    rep(4, times=length(sensor_bugs_notRecording[[4]]$data)),
+                    rep(5, times=length(sensor_bugs_notRecording[[5]]$data)),
+                    rep(6, times=length(sensor_bugs_notRecording[[6]]$data)),
+                    rep(7, times=length(sensor_bugs_notRecording[[7]]$data)),
+                    rep(8, times=length(sensor_bugs_notRecording[[8]]$data)),
+                    rep(9, times=length(sensor_bugs_notRecording[[9]]$data)))
+  reading <- c(sensor_bugs_notRecording[[1]]$data, 
+               sensor_bugs_notRecording[[2]]$data, 
+               sensor_bugs_notRecording[[3]]$data, 
+               sensor_bugs_notRecording[[4]]$data, 
+               sensor_bugs_notRecording[[5]]$data, 
+               sensor_bugs_notRecording[[6]]$data, 
+               sensor_bugs_notRecording[[7]]$data, 
+               sensor_bugs_notRecording[[8]]$data, 
+               sensor_bugs_notRecording[[9]]$data)
+  time <- c()
+  for(the_sensor_index in 1:9){
+    for(the_point_index in 1:length(sensor_bugs_notRecording[[the_sensor_index]]$data)){
+      time <- c(time, as.character(sensor_bugs_notRecording[[the_sensor_index]]$time[[the_point_index]]))
+    }
+  }
+  time <- as.POSIXct(time) # https://www.r-bloggers.com/using-dates-and-times-in-r/
+  #sensor_bugs_notRecording_dataframe <- data.frame(sensor_index, reading, time)
+  #I want the sensor_bugs_notRecording_dataframe$sensor_index to be fctr (label) and not double number:
+  sensor_bugs_notRecording_dataframe <- data.frame(as.character(sensor_index), reading, time)
+  names(sensor_bugs_notRecording_dataframe)[1] <- "sensor_index"
+}
+
+#save the data frame of sensor_bugs_notRecording_dataframe:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/sensor_bugs_notRecording_dataframe.RData", sep="/")
+  save(sensor_bugs_notRecording_dataframe, file = address_file)  
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# load the data frame of sensor_bugs_notRecording_dataframe:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/sensor_bugs_notRecording_dataframe.RData", sep="/")
+  load(file = address_file)
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# creating data frame of sensor_readings_inTimeSlots_dataframe having components:
+# $sensor_index
+# $chemical_Appluimonia
+# $chemical_Chlorodinine
+# $chemical_Methylosmolene
+# $chemical_AGOC3A
+# $time
+{
+  sensor_index <- c(rep(1, times=dim(sensor_readings_inTimeSlots[[1]])[1]),
+                    rep(2, times=dim(sensor_readings_inTimeSlots[[2]])[1]),
+                    rep(3, times=dim(sensor_readings_inTimeSlots[[3]])[1]),
+                    rep(4, times=dim(sensor_readings_inTimeSlots[[4]])[1]),
+                    rep(5, times=dim(sensor_readings_inTimeSlots[[5]])[1]),
+                    rep(6, times=dim(sensor_readings_inTimeSlots[[6]])[1]),
+                    rep(7, times=dim(sensor_readings_inTimeSlots[[7]])[1]),
+                    rep(8, times=dim(sensor_readings_inTimeSlots[[8]])[1]),
+                    rep(9, times=dim(sensor_readings_inTimeSlots[[9]])[1]))
+  chemical_Appluimonia <- c(sensor_readings_inTimeSlots[[1]][, 1],
+                            sensor_readings_inTimeSlots[[2]][, 1],
+                            sensor_readings_inTimeSlots[[3]][, 1],
+                            sensor_readings_inTimeSlots[[4]][, 1],
+                            sensor_readings_inTimeSlots[[5]][, 1],
+                            sensor_readings_inTimeSlots[[6]][, 1],
+                            sensor_readings_inTimeSlots[[7]][, 1],
+                            sensor_readings_inTimeSlots[[8]][, 1],
+                            sensor_readings_inTimeSlots[[9]][, 1])
+  chemical_Chlorodinine <- c(sensor_readings_inTimeSlots[[1]][, 2],
+                            sensor_readings_inTimeSlots[[2]][, 2],
+                            sensor_readings_inTimeSlots[[3]][, 2],
+                            sensor_readings_inTimeSlots[[4]][, 2],
+                            sensor_readings_inTimeSlots[[5]][, 2],
+                            sensor_readings_inTimeSlots[[6]][, 2],
+                            sensor_readings_inTimeSlots[[7]][, 2],
+                            sensor_readings_inTimeSlots[[8]][, 2],
+                            sensor_readings_inTimeSlots[[9]][, 2])
+  chemical_Methylosmolene <- c(sensor_readings_inTimeSlots[[1]][, 3],
+                            sensor_readings_inTimeSlots[[2]][, 3],
+                            sensor_readings_inTimeSlots[[3]][, 3],
+                            sensor_readings_inTimeSlots[[4]][, 3],
+                            sensor_readings_inTimeSlots[[5]][, 3],
+                            sensor_readings_inTimeSlots[[6]][, 3],
+                            sensor_readings_inTimeSlots[[7]][, 3],
+                            sensor_readings_inTimeSlots[[8]][, 3],
+                            sensor_readings_inTimeSlots[[9]][, 3])
+  chemical_AGOC3A <- c(sensor_readings_inTimeSlots[[1]][, 4],
+                            sensor_readings_inTimeSlots[[2]][, 4],
+                            sensor_readings_inTimeSlots[[3]][, 4],
+                            sensor_readings_inTimeSlots[[4]][, 4],
+                            sensor_readings_inTimeSlots[[5]][, 4],
+                            sensor_readings_inTimeSlots[[6]][, 4],
+                            sensor_readings_inTimeSlots[[7]][, 4],
+                            sensor_readings_inTimeSlots[[8]][, 4],
+                            sensor_readings_inTimeSlots[[9]][, 4])
+  time <- c()
+  for(the_sensor_index in 1:9){
+    for(the_point_index in 1:dim(sensor_readings_inTimeSlots[[the_sensor_index]])[1]){
+      time <- c(time, as.character(sensor_times[[the_sensor_index]][[the_point_index]]))
+    }
+  }
+  time <- as.POSIXct(time) # https://www.r-bloggers.com/using-dates-and-times-in-r/
+  #sensor_readings_inTimeSlots_dataframe <- data.frame(sensor_index, chemical_Appluimonia, chemical_Chlorodinine, chemical_Methylosmolene, chemical_AGOC3A, time)
+  #I want the sensor_bugs_notRecording_dataframe$sensor_index to be fctr (label) and not double number:
+  sensor_readings_inTimeSlots_dataframe <- data.frame(as.character(sensor_index), chemical_Appluimonia, chemical_Chlorodinine, chemical_Methylosmolene, chemical_AGOC3A, time)
+  names(sensor_readings_inTimeSlots_dataframe)[1] <- "sensor_index"
+}
+
+#save the data frame of sensor_readings_inTimeSlots_dataframe:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/sensor_readings_inTimeSlots_dataframe.RData", sep="/")
+  save(sensor_readings_inTimeSlots_dataframe, file = address_file)  
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# load the data frame of sensor_readings_inTimeSlots_dataframe:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/sensor_readings_inTimeSlots_dataframe.RData", sep="/")
+  load(file = address_file)
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# display the dataframes sensor_bugs_notRecording_dataframe and sensor_readings_inTimeSlots_dataframe:
+sensor_readings_inTimeSlots_dataframe
+sensor_bugs_notRecording_dataframe
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 4, fig.width = 7, fig.align = "center"}
+suppressMessages(library(ggplot2))
+suppressMessages(library(ggridges))
+# webs introducing Ridgeline plot (or Joyplot):
+# https://www.data-to-viz.com/graph/ridgeline.html
+# https://cran.r-project.org/web/packages/ggridges/vignettes/introduction.html
+
+# example 1 for ridgeplot:
+#ggplot(iris, aes(x = Sepal.Length, y = Species)) + geom_density_ridges()
+
+# example 2 for ridgeplot:
+#ggplot(iris, aes(x=Sepal.Length, y=Species, fill = Species)) +
+#  geom_density_ridges(
+#    aes(point_color = Species, point_fill = Species, point_shape = Species),
+#    alpha = .2, point_alpha = 1, jittered_points = TRUE
+#  ) +
+#  scale_point_color_hue(l = 40) +
+#  scale_discrete_manual(aesthetics = "point_shape", values = c(21, 22, 23))
+
+
+# ridge plot of reading versus time:
+#ggplot(sensor_bugs_notRecording_dataframe, aes(x = time, y = reading)) + geom_density_ridges()
+
+# ridge plot of sensor_index versus time:
+#ggplot(sensor_bugs_notRecording_dataframe, aes(x = time, y = sensor_index)) + geom_density_ridges()
+
+# ridge plot of sensor_index versus time with points of chemical (reading):
+{
+  suppressMessages(
+  p <- ggplot(sensor_bugs_notRecording_dataframe, aes(x=time, y=sensor_index, fill = reading)) +
+    geom_density_ridges(
+      aes(point_color = reading, point_fill = reading, point_shape = reading),
+      alpha = .2, point_alpha = 1, jittered_points = TRUE
+    )
+  )
+  suppressMessages(print(p))
+}
+```
+\captionof{figure}{The ridge plot (Joyplot) of the sensor failures in recording from the chemicals.}
+\label{figure_sensor_performance_ridgePlot}
+
+## Analysis of Chemicals
+
+In this section, we analyze the recorded chemicals by the nine sensors. The metric of records is parts per million.
+
+### Distribution of The Recorded Chemicals
+
+The quantile plot of the recorded of every chemical by every sensor is depicted in Fig. \ref{figure_SensorChemicalGrid_quantile}. 
+
+\bigbreak
+In the following, we analyze the qualtile plots:
+
+* For some chemicals and sensors, most of recordings are very small as it is expected according to rules of environmental protection. However, we can see some outliers which are showing high values of the chemicals. For example, \textbf{for all sensors, we have very high values ($30$ to $80$ parts per million) of Methylosmolene and AGOC-3A.}
+
+* We also have some outliers (relatively high values) of Appluimonia and Chlorodinine recorded by different sensors. For example, \textbf{sensor 2 has recorded some high values of Chlorodinine.}
+
+* For most of the sensors, the recordings of Appluimonia and Chlorodinine are \textbf{very skewed around zero}. This makes sense because the values are supposed to be small. 
+
+* There is some \textbf{strange granularity in distribution of Appluimonia and Chlorodinine recorded by sensor 4. This probably shows some sensor failures in the recording or some strange patterns of chemicals in that area.}
+
+* \textbf{In recorded data by sensor 6, we can see some strange breaking knee points. This again might be because of failures of the sensor or the odd patterns of chemical values. However, as this has happened for all chemicals, the hypothesis of sensor problem is stronger.}
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# function for plotting quantile plot:
+quantile_plot <- function(data, title, xlab="", ylab="", color){
+  n_x <- length(data)
+  p_x <- ppoints(n_x)
+  plot(x = p_x, y = sort(data), xlab=xlab, ylab=ylab, main = title, col = adjustcolor(color))
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# function for plotting quantile plot overlayed on a previous plot:
+quantile_plot_overlayed <- function(data, title, xlab="", ylab="", color){
+  n_x <- length(data)
+  p_x <- ppoints(n_x)
+  lines(x = p_x, y = sort(data), type="p", xlab=xlab, ylab=ylab, main = title, col = adjustcolor(color))
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 10, fig.width = 10, fig.align = "center"}
+# plotting the quantile plots of chemicals of every sensor:
+{
+  library(pracma)
+  savePar <- par(mfrow=c(9,4),  mar=c(1.8, 3, 2, 2))
+  for(sensor_index in 1:9){
+    data_of_a_sensor <- categorized_by_sensors[[sensor_index]]
+    #chemicals <- unlist(unique(data_of_a_sensor[,1]))
+    chemicals <- c("Appluimonia", "Chlorodinine", "Methylosmolene", "AGOC-3A")
+    for(chemical_index in 1:4){
+      chemical <- chemicals[chemical_index]
+      a_chemical_of_a_sensor <- data_of_a_sensor[data_of_a_sensor[,1] == chemical,]
+      readings_of_a_sensor <- as.numeric(a_chemical_of_a_sensor[,3])
+      quantile_plot(data=readings_of_a_sensor, title="", color="steelblue")
+    }
+  }
+  par(savePar)
+}
+```
+\captionof{figure}{The quantile plots of the sensor records from the chemicals. Rows and columns correspond to the sensors and chemicals, respectively, with the order mentioned in Fig. \ref{figure_map} and Table \ref{table_chemicals}.}
+\label{figure_SensorChemicalGrid_quantile}
+
+### The Recorded Chemicals During Time
+
+The time interval of the recordings of the sensors is from April 1st, 2016 to December 31st, 2016. The recordings of the four chemicals by the nine sensors are shown as time series in Fig. \ref{figure_SensorChemicalGrid_timeSeries}. This figure also shows the smoothed curves of the time series by red color. 
+
+\bigbreak
+We analyze the different time series in the following:
+
+* Again, we see that \textbf{for all sensors, we have very high values ($30$ to $80$ parts per million) of Methylosmolene and AGOC-3A at some times. These picks have happened at some specific times and not all times.} The more accurate report of these times are presented in the next sections.
+
+* We can also see some \textbf{high values of Appluimonia and Chlorodinine at some specific times.} The more accurate report of these times are presented in the next sections.
+
+* There is some \textbf{strange granularity in the time series of Appluimonia and Chlorodinine recorded by sensor 4. But this issue does not exist for records of Methylosmolene and AGOC-3A by this sensor suggesting that this might not be because of sensor failure. According to the increasing behaviour of records of Appluimonia and Chlorodinine by sensor 4, we can conclude that these chemicals have been accumulated around the regions covered by sensor 4.}
+
+* \textbf{The records of sensor 6 for all four chemicals are more frequently having high values, giving the clue that some odd chemical accumulation might have happened at different months of 2016. this might explain the reason of breaking knee points in the quantile plots of this sensor in Fig. \ref{figure_SensorChemicalGrid_quantile}.}
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# function for plotting time series:
+time_series_plot <- function(the_data, title, xlab="", ylab="", color){
+  # plot the time series:
+  index <- 1:length(the_data)
+  plot(x = index, y = the_data, type="l", xlab=xlab, ylab=ylab, main = title, col = adjustcolor(color))
+  
+  # plot the loess smooth of time series:
+  dataframe <- data.frame("y"=vector(length=length(the_data)), "x"=vector(length=length(the_data)))
+  dataframe$y <- the_data
+  dataframe$x <- index
+  loess_data <- loess(y ~ x, data=dataframe, span=0.05) # 5% smoothing span
+  smoothed_data <- predict(loess_data) 
+  lines(x = index, y = smoothed_data, type="l", col = "red")
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 10, fig.width = 10, fig.align = "center"}
+# plotting the time series of chemicals of every sensor:
+{
+  library(pracma)
+  savePar <- par(mfrow=c(9,4),  mar=c(1.8, 3, 2, 2))
+  for(sensor_index in 1:9){
+    data_of_a_sensor <- categorized_by_sensors[[sensor_index]]
+    #chemicals <- unlist(unique(data_of_a_sensor[,1]))
+    chemicals <- c("Appluimonia", "Chlorodinine", "Methylosmolene", "AGOC-3A")
+    for(chemical_index in 1:4){
+      chemical <- chemicals[chemical_index]
+      a_chemical_of_a_sensor <- data_of_a_sensor[data_of_a_sensor[,1] == chemical,]
+      readings_of_a_sensor <- as.numeric(a_chemical_of_a_sensor[,3])
+      time_series_plot(the_data=readings_of_a_sensor, title="", color="steelblue")
+    }
+  }
+  par(savePar)
+}
+```
+\captionof{figure}{The time series plots of the sensor records from the chemicals. Rows and columns correspond to the sensors and chemicals, respectively, with the order mentioned in Fig. \ref{figure_map} and Table \ref{table_chemicals}. The red curves are the smoothed curves of the time series with time span $5\%$.}
+\label{figure_SensorChemicalGrid_timeSeries}
+
+### Unusually High Values of Chemicals
+
+Using interactive ``loon'' package in R programming language, we plot the pairs plot (scatter plot matrix), parallel axes plot, and star plot of the recorded chemicals while the plots are linked together. These plots are shown in figures \ref{figure_loon_sensors_1} and \ref{figure_loon_sensors_2}. For every sensor, the three plots are drawn and shown. 
+
+\bigbreak
+In the plots of every sensor, we highlight the unusually high values of the four chemicals. We use different colors for the different chemicals. the utilized colors are red, green, brown, and orange for large values of Appluimonia, Chlorodinine, Methylosmolene, and AGOC-3A, respectively. 
+
+\bigbreak
+Afterwards, using the manually determined colors, we label the recorded data as usual and high values for each chemical recorded by every sensor. Therefore, we have the indices of high chemical values for every chemical in every sensor record. These indices are used in the following sections where we analyze the high values of chemicals.
+
+\bigbreak
+The \textbf{correlation of the recorded chemical values} can be discussed here. Here, the chemicals are the dimensions of data. The correlation of the the variables (dimensions) can be analyzed using either scatter plots, parallel axes, or the star plot. In scatter plot, if the the points almost form a line with positive/negative slope, the correlation is positive/negative. In the parallel axes or the star plot, if the high/low values of a variable correspond to the high/low values of the other variable, those two variables are positively correclated; however, if the high/low values of a variable correspond to the low/high values of another one, we have negative correlation. 
+
+\bigbreak
+From the plots, we can see that:
+
+* In \textbf{sensor 1}, \textit{if we ignore some rare outliers (high values of chemicals)}, we can say that \textbf{Appluimonia and Methylosmolene, Chlorodinine and Methylosmolene, and Methylosmolene and AGOC-3A are almost independent}. That is because given a variable, the value of other variable does not change in the scatter plot.
+
+* In \textbf{sensor 2}, \textit{if we ignore some rare outliers (high values of chemicals)}, we can say that \textbf{Appluimonia and Chlorodinine, Appluimonia and Methylosmolene, Chlorodinine and Methylosmolene are almost independent}. That is because given a variable, the value of other variable does not change in the scatter plot.
+
+* In \textbf{sensor 3}, the \textit{correlation of Appluimonia and Chlorodinine, the correlation of Appluimonia and AGOC-3A, and the correlation of Chlorodinine and AGOC-3A are relatively small} compared to other correlations because the points of the scatter plot roughly (but not completely) cover many parts of the plot close the scatter plot of two independent variables. 
+
+* In \textbf{sensor 4}, the variables \textbf{Appluimonia and Chlorodinine, Appluimonia and AGOC-3A, and Chlorodinine and AGOC-3A are positively correlated}.   
+
+* In \textbf{sensor 5}, the variables \textbf{Appluimonia and Chlorodinine, Appluimonia and AGOC-3A, and Chlorodinine and AGOC-3A are negatively correlated}. Also, we can see from the pattern of scatter plots that \textbf{Appluimonia and Methylosmolene, Chlorodinine and Methylosmolene, and Methylosmolene and AGOC-3A have some interesting and specific dependence.}
+
+* In \textbf{sensor 6}, we can see from the pattern of scatter plots that \textbf{all the chemicals have some interesting and specific dependence.}
+
+* In \textbf{sensor 7}, \textit{if we ignore some rare outliers (high values of chemicals)}, we can say that \textbf{Appluimonia and Chlorodinine, and Chlorodinine and AGOC-3A are almost independent}. Also, we can see that \textbf{Appluimonia and AGOC-3A are almost negatively correlated.}
+
+* In \textbf{sensor 8}, \textit{if we ignore some rare outliers (high values of chemicals)}, we can say that \textbf{Appluimonia and Methylosmolene, Chlorodinine and Methylosmolene, and Methylosmolene and AGOC-3A are almost independent}.
+
+* In \textbf{sensor 9}, we can say that \textbf{Appluimonia and AGOC-3A are almost negatively correlated}. Also, we can see from the pattern of scatter plots that \textbf{Methylosmolene and AGOC-3A have some interesting and specific dependence.}
+
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# initialization of readings and dates of the unusual chemical values:
+# this block of code should be run before the next block of code:
+{
+  times_unusual_Appluimonia <- vector(mode="list", length=9)  # nine sensors
+  times_unusual_Chlorodinine <- vector(mode="list", length=9)  # nine sensors
+  times_unusual_Methylosmolene <- vector(mode="list", length=9)  # nine sensors
+  times_unusual_AGOC3A <- vector(mode="list", length=9)  # nine sensors
+  
+  readings_unusual_Appluimonia <- vector(mode="list", length=9)  # nine sensors
+  readings_unusual_Chlorodinine <- vector(mode="list", length=9)  # nine sensors
+  readings_unusual_Methylosmolene <- vector(mode="list", length=9)  # nine sensors
+  readings_unusual_AGOC3A <- vector(mode="list", length=9)  # nine sensors
+  
+  colors_loon <- vector(mode="list", length=9)  # nine sensors
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# take the data of a sensor:
+sensor_index <- 9   # choose a number 1, 2, 3, 4, 5, 6, 7, 8, or 9
+
+# loon interactive plots (pairs plot + navigation plot + parallel or stars plot) on the data of sensors:
+# this block of code should be run before the next block of code:
+{
+  sensor_readings_OneSensor <- sensor_readings_inTimeSlots_dataframe[sensor_readings_inTimeSlots_dataframe$sensor_index == sensor_index,]
+  sensor_times_OneSensor <- sensor_readings_OneSensor[,6]
+  sensor_readings_OneSensor <- sensor_readings_OneSensor[,2:5]
+  
+  names(sensor_readings_OneSensor) <- c("Appluimonia", "Chlorodinine", "Methylosmolene", "AGOC-3A")
+  library(loon)
+  sa3 <- l_navgraph(data=sensor_readings_OneSensor, linkingGroup="sensor_data_group")
+  sa1 <- l_pairs(data=sensor_readings_OneSensor, linkingGroup="sensor_data_group")
+  sa2 <- l_serialaxes(data=sensor_readings_OneSensor, linkingGroup="sensor_data_group")
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# this block of code should be run after the previous block of code:
+
+# the colors of points in loon plots:
+{
+  colors_loon[[sensor_index]] <- sa1['color'][[1]] # [[1]] is because we have 6 plots in the pairs plot. Colors in all are the same and we consider colors of the first plot in the pairs plot.
+  used_colors <- unique(colors_loon[[sensor_index]])  
+  print("used colors:")
+  used_colors
+  # the used colors --> "#1F1F7878B4B4": blue, "#3333A0A02C2C": green, "#E3E31A1A1C1C": red, "#B1B159592828": brown, "#FFFF7F7F0000": orange
+}
+
+# extracting the readings and dates of the unusual chemical values:
+{
+  # unusual Appluimonia:
+  readings_unusual_Appluimonia[[sensor_index]] <- sensor_readings_OneSensor[sa1['color'][[1]] == "#E3E31A1A1C1C", ]
+  times_unusual_Appluimonia[[sensor_index]] <- sensor_times_OneSensor[sa1['color'][[1]] == "#E3E31A1A1C1C"]
+  readings_unusual_Appluimonia[[sensor_index]]
+  print("=====================")
+  print("times of unusual Appluimonia:")
+  times_unusual_Appluimonia[[sensor_index]]
+  
+  # unusual Chlorodinine:
+  readings_unusual_Chlorodinine[[sensor_index]] <- sensor_readings_OneSensor[sa1['color'][[1]] == "#3333A0A02C2C", ]
+  times_unusual_Chlorodinine[[sensor_index]] <- sensor_times_OneSensor[sa1['color'][[1]] == "#3333A0A02C2C"]
+  readings_unusual_Chlorodinine[[sensor_index]]
+  print("=====================")
+  print("times of unusual Chlorodinine:")
+  times_unusual_Chlorodinine[[sensor_index]]
+  
+  # unusual Methylosmolene:
+  readings_unusual_Methylosmolene[[sensor_index]] <- sensor_readings_OneSensor[sa1['color'][[1]] == "#B1B159592828", ]
+  times_unusual_Methylosmolene[[sensor_index]] <- sensor_times_OneSensor[sa1['color'][[1]] == "#B1B159592828"] 
+  if(sensor_index == 7){
+    readings_unusual_Methylosmolene[[sensor_index]] <- sensor_readings_OneSensor[sa1['color'][[1]] == "#B1B159592828" | sa1['color'][[1]] == "#3333A0A02C2C", ]
+    times_unusual_Methylosmolene[[sensor_index]] <- sensor_times_OneSensor[sa1['color'][[1]] == "#B1B159592828" | sa1['color'][[1]] == "#3333A0A02C2C"]
+  }
+  readings_unusual_Methylosmolene[[sensor_index]]
+  print("=====================")
+  print("times of unusual Methylosmolene:")
+  times_unusual_Methylosmolene[[sensor_index]]
+  
+  # unusual AGOC3A:
+  readings_unusual_AGOC3A[[sensor_index]] <- sensor_readings_OneSensor[sa1['color'][[1]] == "#B1B159592828" | sa1['color'][[1]] == "#FFFF7F7F0000", ]
+  times_unusual_AGOC3A[[sensor_index]] <- sensor_times_OneSensor[sa1['color'][[1]] == "#B1B159592828" | sa1['color'][[1]] == "#FFFF7F7F0000"]
+  if(sensor_index == 5 || sensor_index == 6 || sensor_index == 9){
+    readings_unusual_AGOC3A[[sensor_index]] <- sensor_readings_OneSensor[sa1['color'][[1]] == "#FFFF7F7F0000", ]
+    times_unusual_AGOC3A[[sensor_index]] <- sensor_times_OneSensor[sa1['color'][[1]] == "#FFFF7F7F0000"]
+  }
+  if(sensor_index == 7){
+    readings_unusual_AGOC3A[[sensor_index]] <- sensor_readings_OneSensor[sa1['color'][[1]] == "#FFFF7F7F0000" | sa1['color'][[1]] == "#B1B159592828" | sa1['color'][[1]] == "#3333A0A02C2C", ]
+    times_unusual_AGOC3A[[sensor_index]] <- sensor_times_OneSensor[sa1['color'][[1]] == "#FFFF7F7F0000" | sa1['color'][[1]] == "#B1B159592828" | sa1['color'][[1]] == "#3333A0A02C2C"]
+  }
+  readings_unusual_AGOC3A[[sensor_index]]
+  print("=====================")
+  print("times of unusual AGOC3A:")
+  times_unusual_AGOC3A[[sensor_index]]
+}
+
+# save the readings and dates of the unusual chemical values:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/readings_unusual_Appluimonia.RData", sep="/")
+  save(readings_unusual_Appluimonia, file = address_file) 
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/times_unusual_Appluimonia.RData", sep="/")
+  save(times_unusual_Appluimonia, file = address_file) 
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/readings_unusual_Chlorodinine.RData", sep="/")
+  save(readings_unusual_Chlorodinine, file = address_file) 
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/times_unusual_Chlorodinine.RData", sep="/")
+  save(times_unusual_Chlorodinine, file = address_file) 
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/readings_unusual_Methylosmolene.RData", sep="/")
+  save(readings_unusual_Methylosmolene, file = address_file) 
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/times_unusual_Methylosmolene.RData", sep="/")
+  save(times_unusual_Methylosmolene, file = address_file) 
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/readings_unusual_AGOC3A.RData", sep="/")
+  save(readings_unusual_AGOC3A, file = address_file) 
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/times_unusual_AGOC3A.RData", sep="/")
+  save(times_unusual_AGOC3A, file = address_file) 
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/colors_loon.RData", sep="/")
+  save(colors_loon, file = address_file) 
+}
+
+# in case we want to set the colors of points as I colored them before:
+#sa1 <- l_pairs(data=sensor_readings_OneSensor, linkingGroup="sensor_data_group", color=colors_loon[[sensor_index]])
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# load the readings and dates of the unusual chemical values:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/readings_unusual_Appluimonia.RData", sep="/")
+  load(file = address_file) 
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/times_unusual_Appluimonia.RData", sep="/")
+  load(file = address_file) 
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/readings_unusual_Chlorodinine.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/times_unusual_Chlorodinine.RData", sep="/")
+  load(file = address_file) 
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/readings_unusual_Methylosmolene.RData", sep="/")
+  load(file = address_file) 
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/times_unusual_Methylosmolene.RData", sep="/")
+  load(file = address_file) 
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/readings_unusual_AGOC3A.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/times_unusual_AGOC3A.RData", sep="/")
+  load(file = address_file) 
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/loon/colors_loon.RData", sep="/")
+  load(file = address_file) 
+}
+```
+
+\bigbreak
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{./images/loon_sensors_1}
+\captionof{figure}{The pairs plot, parallel axes plot, and star plot for chemical recordings by sensors 1 to 5. In the parallel axes and star plots, the data is scaled by variable. The red, green, brown, and orange points indicate the large values of Appluimonia, Chlorodinine, Methylosmolene, and AGOC-3A, respectively. Note that in some cases, a combination of colors show the large values for a  chemical.}
+\label{figure_loon_sensors_1}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{./images/loon_sensors_2}
+\captionof{figure}{The pairs plot, parallel axes plot, and star plot for chemical recordings by sensors 6 to 9. In the parallel axes and star plots, the data is scaled by variable. The red, green, brown, and orange points indicate the large values of Appluimonia, Chlorodinine, Methylosmolene, and AGOC-3A, respectively. Note that in some cases, a combination of colors show the large values for a  chemical.}
+\label{figure_loon_sensors_2}
+\end{center}
+
+## Analysis of Meteorological Data and Factories
+
+### Distribution of The Meteorological Data
+
+The dataset provides us the meteorological data for a time period. The given meteorological data include both wind direction and speed. The wind speed is in meters per second and the wind direction is where the wind is originating from using a north-referenced azimuth bearing where 360/000 is true north. To better explain the wind direction, we should say that: 
+
+* Wind direction 0 (or 360) means wind is blowing from north to south.
+
+* Wind direction 90 means wind is blowing from east to west.
+
+* Wind direction 180 means wind is blowing from south to north.
+
+* Wind direction 270 means wind is blowing from west to east.
+
+\bigbreak
+We plot the scatter plot of the meteorological data versus time in Fig. \ref{figure_meteorological_allDates}. From this figure, we find out that the given meteorological data contain information for three months, i.e., April 2016, August 2016, and December 2016.
+
+
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# read the excel file:
+{
+  library("readxl")
+  meteorological_data <- read_excel("./Dataset/Dataset2/Meteorological_Data.xlsx") 
+}
+
+# convert to matrix:
+{
+  # https://stat.ethz.ch/pipermail/r-help/2012-July/319209.html
+  meteorological_data_matrix <- as.matrix(meteorological_data)  
+  colnames(meteorological_data_matrix) <- NULL  # remove the header
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# display the dataframe of meteorological_data:
+meteorological_data
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 4.2, fig.width = 4, fig.align = "center"}
+# plot the scatter plot of all meteorological data (one plot for wind direction and one for wind speed):
+{
+  savePar <- par(mfrow=c(2,1),  mar=c(4, 5, 0, 2))
+  plot(x=meteorological_data$Date, y=meteorological_data$`Wind Direction`, xlab="", ylab="Wind direction", col="steelblue")
+  plot(x=meteorological_data$Date, y=meteorological_data$`Wind Speed (m/s)`, xlab="Date", ylab="Wind speed (m/s)", col="firebrick")
+  par(savePar)
+}
+```
+\captionof{figure}{The meteorological data provided for three different months, i.e., April 2016, August 2016, and December 2016.}
+\label{figure_meteorological_allDates}
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# function for plotting the smooth curve using loess:
+plot_smooth_curve <- function(x, y, span=0.05, line_thickness=2){
+  # plot the loess smooth of time series:
+  dataframe <- data.frame("y"=vector(length=length(x)), "x"=vector(length=length(y)))
+  index <- 1:length(x)
+  dataframe$y <- y
+  dataframe$x <- index
+  loess_data <- loess(y ~ x, data=dataframe, span=span) 
+  smoothed_data <- predict(loess_data) 
+  
+  # sometimes, the result of smoothing has length less than the original data (because of edges -- the first or last points):
+  if(length(smoothed_data) < length(x)){
+    difference_of_lengths <- length(x) - length(smoothed_data)
+    smoothed_data <- c(smoothed_data, rep(tail(smoothed_data, n=1), times=difference_of_lengths))
+  }
+  lines(x = x, y = smoothed_data, type="l", col = "darkgreen", lwd = line_thickness)
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE, fig.height = 5, fig.width = 10, fig.align = "center"}
+# because of some bug of rmarkdown in pdf (I googled a lot), it faces error for producing plot in pdf but works in here as R code. so, I put the resulted plot as an image in the pdf report (several paragraphs after with name figure_meteorological_time_series): 
+
+savePar <- par(mfrow=c(2,3),  mar=c(4, 4, 0, 0))
+
+# plot wind direction of April 2016:
+{
+  dates_of_the_period <- meteorological_data$Date < as.Date("2016-05-01")
+  meteorological_data_april <- meteorological_data[dates_of_the_period,]
+  meteorological_data_april <- na.omit(meteorological_data_april)
+  plot(x=meteorological_data_april$Date, y=meteorological_data_april$`Wind Direction`, type="l", xlab="", ylab="Wind direction", col="steelblue", panel.first = grid(), ylim=c(0,360))
+  plot_smooth_curve(x=meteorological_data_april$Date, y=meteorological_data_april$`Wind Direction`, span=0.20)
+}
+
+# plot wind direction of August 2016:
+{
+  dates_of_the_period = (meteorological_data$Date < as.Date("2016-09-01")) & (meteorological_data$Date > as.Date("2016-06-01"))
+  meteorological_data_august <- meteorological_data[dates_of_the_period,]
+  meteorological_data_august <- na.omit(meteorological_data_august)
+  plot(x=meteorological_data_august$Date, y=meteorological_data_august$`Wind Direction`, type="l", xlab="", ylab="", col="steelblue", panel.first = grid(), ylim=c(0,360))
+  plot_smooth_curve(x=meteorological_data_august$Date, y=meteorological_data_august$`Wind Direction`, span=0.20)
+}
+
+# plot wind direction of December 2016:
+{
+  dates_of_the_period = meteorological_data$Date > as.Date("2016-10-01")
+  meteorological_data_december <- meteorological_data[dates_of_the_period,]
+  meteorological_data_december <- na.omit(meteorological_data_december)
+  plot(x=meteorological_data_december$Date, y=meteorological_data_december$`Wind Direction`, type="l", xlab="", ylab="", col="steelblue", panel.first = grid(), ylim=c(0,360))
+  plot_smooth_curve(x=meteorological_data_december$Date, y=meteorological_data_december$`Wind Direction`, span=0.20)
+}
+
+# plot wind speed of April 2016:
+{
+  plot(x=meteorological_data_april$Date, y=meteorological_data_april$`Wind Speed (m/s)`, type="l", xlab="Date", ylab="Wind speed (m/s)", col="firebrick", panel.first = grid(), ylim=c(0,7))
+  plot_smooth_curve(x=meteorological_data_april$Date, y=meteorological_data_april$`Wind Speed (m/s)`, span=0.20)
+}
+  
+# plot wind speed of August 2016:
+{
+  plot(x=meteorological_data_august$Date, y=meteorological_data_august$`Wind Speed (m/s)`, type="l", xlab="Date", ylab="", col="firebrick", panel.first = grid(), ylim=c(0,7))
+  plot_smooth_curve(x=meteorological_data_august$Date, y=meteorological_data_august$`Wind Speed (m/s)`, span=0.20)
+}
+ 
+# plot wind speed of December 2016:
+{   
+  plot(x=meteorological_data_december$Date, y=meteorological_data_december$`Wind Speed (m/s)`, type="l", xlab="Date", ylab="", col="firebrick", panel.first = grid(), ylim=c(0,7))
+  plot_smooth_curve(x=meteorological_data_december$Date, y=meteorological_data_december$`Wind Speed (m/s)`, span=0.20)
+}
+  
+par(savePar)
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# save the meteorological data of the three months:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/meteorological_data_april.RData", sep="/")
+  save(meteorological_data_april, file = address_file)  
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/meteorological_data_august.RData", sep="/")
+  save(meteorological_data_august, file = address_file)  
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/meteorological_data_december.RData", sep="/")
+  save(meteorological_data_december, file = address_file)  
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# load the meteorological data of the three months:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/meteorological_data_april.RData", sep="/")
+  load(file = address_file)
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/meteorological_data_august.RData", sep="/")
+  load(file = address_file)
+  
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset2/mySavings/meteorological_data_december.RData", sep="/")
+  load(file = address_file)
+}
+```
+
+\bigbreak
+As the meteorological data contain April 2016, August 2016, and December 2016, we separate the meteorological data of these three months from the dataset. Figure \ref{figure_meteorological_hexbinplot} shows the hexagonal 2D histograms of meteorological data, i.e., the wind direction versus the wind speed during months April, August, and December 2016. From these histograms, we can see the density and concentration of the wind direction and speed in the three months:
+
+* In \textbf{April 2018}, the wind mostly blows \textbf{from north to south} and the speed is mostly \textbf{1 m/s}. Moreover, in some cases, we have wind with speed \textbf{less than 1 to 2 m/s} blowing \textbf{from east to west}.
+
+* In \textbf{August 2018}, the wind mostly blows \textbf{from south-west to north-east} and the speed is mostly \textbf{1 to 2 m/s}.
+
+* In \textbf{December 2018}, the wind mostly blows either \textbf{from south to north} with speed \textbf{1.5 m/s} or \textbf{from north-west to south-east} with speed \textbf{4 m/s}.
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.height = 8, fig.width = 20, fig.align = "center"}
+# plot the hexbinplots of meteorological data of the three months:
+{
+  library(hexbin)
+  plotList <- lapply(1:3, function(i) {
+    if(i == 1){
+      hexbinplot(`Wind Direction`~`Wind Speed (m/s)`, data=meteorological_data_april, xbins=5, style="lattice", aspect=1, ylim=c(-20,400), xlim=c(0,7), main="April 2016")
+    }
+    else if(i == 2){
+      hexbinplot(`Wind Direction`~`Wind Speed (m/s)`, data=meteorological_data_august, xbins=5, style="lattice", aspect=1, ylim=c(-20,400), xlim=c(0,7), main="August 2016")
+    }
+    else if(i == 3){
+      hexbinplot(`Wind Direction`~`Wind Speed (m/s)`, data=meteorological_data_december, xbins=5, style="lattice", aspect=1, ylim=c(-20,400), xlim=c(0,7), main="December 2016")
+    }
+  })
+  
+  # grid (par) for hexbinplot:
+  # https://stackoverflow.com/questions/21110929/several-hexbin-plots-on-one-pdf-page-in-r
+  library(gridExtra)    
+  do.call(grid.arrange, c(plotList, ncol=3)) 
+}
+```
+\captionof{figure}{The hexagonal 2D histograms of meteorological data, i.e., the wind direction versus the wind speed during months April, August, and December 2016.}
+\label{figure_meteorological_hexbinplot}
+
+### The Meteorological Data During Time
+
+It is also useful to show the meteorological data in terms of time because Fig. \ref{figure_meteorological_hexbinplot} does not encode the detailed time within the months. Figure \ref{figure_meteorological_time_series} shows the times series of meteorological data, including both wind direction adn speed, for the three months. We can conclude from this figure that:
+
+* For \textbf{April 2016}, on average, the wind direction is \textbf{from north to south} but \textbf{in the middle of April, we have many different directios of wind}. The speed is around \textbf{1 or 2 m/s} but is \textbf{slowly decreasing}.
+
+* For \textbf{August 2016}, on average, the wind blows \textbf{from south-west to north-east} with speed \textbf{1 or 2 m/s}.
+
+* For \textbf{December 2016}, on average, the wind blows \textbf{from south-west to north-east} with speed \textbf{2 or 3 m/s}. The wind direction and speed has \textbf{fluctuation} in this month.
+
+\bigbreak
+We summarize the meteorological information from the figures \ref{figure_meteorological_hexbinplot} and \ref{figure_meteorological_time_series} in Table \ref{table_meteorological}.
+
+\bigbreak
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{./images/meteorological_time_series}
+\captionof{figure}{The time series of meteorological data, i.e., wind direction and speed during months April 2016 (first column), August 2016 (second column), and December 2016 (third column). The green curves are the smoothed curves of the time series with span $20\%$.}
+\label{figure_meteorological_time_series}
+\end{center}
+
+\bigbreak
+
+\begin{center}
+\begin{tabular}{l | l | l}
+\hline
+\hline
+\textbf{Month} & \textbf{During the month} & \textbf{On average}\\
+\hline
+\hline
+April & north to south, 1 to 2 m/s $+$ some fluctuation in mid April & north to south, 1 or 2 m/s\\
+\hline
+August & south-west to north-east, 1 to 2 m/s & south-west to north-east, 1 to 2 m/s\\
+\hline
+December & south to north, 1.5 m/s $+$ north-west to south-east, 4 m/s & south-west to north-east, 2 or 3 m/s\\
+\hline
+\hline
+\end{tabular}
+\captionof{table}{Meteorological information in April, August, and December 2016.}
+\label{table_meteorological}
+\end{center}
+
+### Analysis of High Chemical Values With The Meteorological Data
+
+In this section, we combine the information extracted from the records of chemical values and the meteorological data in order to figure out which manufacturing factories were responsible for high values of which chemicals and when those happened. We plot the scatter plots of the meteorological data in the three months of April, August, and December in Fig. \ref{figure_meteorological_matchedDates}. In this figure, we do this plotting for all the nine sensors where the points in the scatter plots are color-coded by whether they are small or unusually high values of chemicals. Hence, for every sensor, we have three scatter plots for the three months where the unusual values of chemicals are shown. The colors of the unusual values of chemicals match the colors used in figures \ref{figure_loon_sensors_1} and \ref{figure_loon_sensors_2}.
+
+\bigbreak
+The fine values of chemicals are colored by transparent (alpha-blended) blue in Fig. \ref{figure_meteorological_matchedDates}. Therefore, the concentration and density of the wind direction and speed can also be observed in these plots. The analysis is the same as the analysis of the concentration of data in Fig. \ref{figure_meteorological_hexbinplot}.
+
+\bigbreak
+The information of detailed time within the month is missing in plots of Fig. \ref{figure_meteorological_matchedDates}. Therefore, it is also useful to have another set of plots where the time is also encoded. Figure \ref{figure_meteorological_matchedDates_timeSeries} includes the time series plots of the meteorological data where the rows an columns correspond to the nine sensors and the three months, respectively. The same color coding as in Fig. \ref{figure_meteorological_matchedDates} is utilized. The question is whether plotting the time series of wind direction or wind speed is better. For figuring out which factory was responsible for which chemical, the information of wind direction is more essential. Therefore, we plot the time series of wind direction. 
+
+\bigbreak
+From figures \ref{figure_meteorological_matchedDates} and \ref{figure_meteorological_matchedDates_timeSeries}, we can infer which factories are responsible for the high values of chemicals. In order to analyze in a better way, we write the information obtained from figures \ref{figure_meteorological_matchedDates} and \ref{figure_meteorological_matchedDates_timeSeries} in four table each of which for a chemical. The four tables are shown in figures \ref{figure_table_Appluimonia}, \ref{figure_table_Chlorodinine}, \ref{figure_table_Methylosmolene}, and \ref{figure_table_AGOC3A}. For every chemical, we list the sensor, the date, and the wind direction in the tables. for more convinience and better visualization, the wind direction is shown by \textbf{arrow glyphs}.   
+
+\bigbreak
+Using the wind direction and the sensor index and by observing the location of sensors in Fig. \ref{figure_map}, we list the suspect factories which might have caused the high values of chemicals. Notice that some wind directions for some sensors do not give us any suspect or can accuse all the factories. In the tables, we write a dash and ``all'' for these two cases, respectively. 
+
+\bigbreak
+As can be seen in figures \ref{figure_table_Appluimonia}, \ref{figure_table_Chlorodinine}, \ref{figure_table_Methylosmolene}, and \ref{figure_table_AGOC3A}, \textbf{for different months and for almost all the four chemicals, the two factories Roadrunner and Kasios are suspect}. According to Table \ref{table_factories}, Roadrunner Fitness Electronics produces fitness trackers, heart rate monitors, and sport-related products and Kasios Office Furniture makes metal and composite-wood office furniture. It is interesting that the first glance at Table \ref{table_factories} makes us suspecious to Radiance ColourTek and Kasios Office Furniture because producing their products seem to be more harmful to environment. However, the analysis of data using data visualization gives us clue that the two factories Roadrunner Fitness Electronics and Kasios Office Furniture are suspect. \textbf{Kasios Office Furniture makes sense to make some trouble because of their metal products. The reason that Roadrunner Fitness Electronics might have made some trouble is probably because of some chemicals they are using for building their sport-related products}. 
+
+\bigbreak
+From Tables figures \ref{figure_table_Appluimonia}, \ref{figure_table_Chlorodinine}, \ref{figure_table_Methylosmolene}, and \ref{figure_table_AGOC3A}, we can also see that:
+
+* \textbf{The high values of Appluimonia have often happened in August and December 2016.}
+
+* \textbf{The high values of Chlorodinine have often happened in April and December 2016.}
+
+* \textbf{The high values of Methylosmolene have often happened in April and December 2016.}
+
+* \textbf{The high values of AGOC-3A have often happened in all April, August, and December 2016.}
+
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 20, fig.width = 10, fig.align = "center"}
+# function for matching the dates of high values of recorded chemicals with the dates of meteorological data. This function is used in the next code block.
+match_dates_with_meteorological_data <- function(dates){
+  
+  # initialize:
+  matched_dates_in_april <- rep(FALSE, length(meteorological_data_april$Date))
+  matched_dates_in_august <- rep(FALSE, length(meteorological_data_august$Date))
+  matched_dates_in_december <- rep(FALSE, length(meteorological_data_december$Date))
+  
+  for(time_slot_index in 1:length(dates)){
+    # the time slot:
+    the_time_slot <- dates[time_slot_index]
+    
+    # April:
+    min_difference_time_april <- min(abs(difftime(time1=as.POSIXct.Date(meteorological_data_april$Date), time2=as.POSIXct.Date(the_time_slot), units = "secs")))
+    
+    # August:
+    min_difference_time_august <- min(abs(difftime(time1=as.POSIXct.Date(meteorological_data_august$Date), time2=as.POSIXct.Date(the_time_slot), units = "secs")))
+    
+    # December:
+    min_difference_time_december <- min(abs(difftime(time1=as.POSIXct.Date(meteorological_data_december$Date), time2=as.POSIXct.Date(the_time_slot), units = "secs")))
+    
+    # find out which month it is in:
+    if((min_difference_time_april < min_difference_time_august) && (min_difference_time_april < min_difference_time_december)){
+      # is in april:
+      matched_date_index <- which.min(abs(difftime(time1=as.POSIXct.Date(meteorological_data_april$Date), time2=as.POSIXct.Date(the_time_slot), units = "secs")))
+      matched_dates_in_april[matched_date_index] <- TRUE
+    }
+    else if((min_difference_time_august < min_difference_time_april) && (min_difference_time_august < min_difference_time_december)){
+      # is in august:
+      matched_date_index <- which.min(abs(difftime(time1=as.POSIXct.Date(meteorological_data_august$Date), time2=as.POSIXct.Date(the_time_slot), units = "secs")))
+      matched_dates_in_august[matched_date_index] <- TRUE
+    }
+    else if((min_difference_time_december < min_difference_time_april) && (min_difference_time_december < min_difference_time_august)){
+      # is in december:
+      matched_date_index <- which.min(abs(difftime(time1=as.POSIXct.Date(meteorological_data_december$Date), time2=as.POSIXct.Date(the_time_slot), units = "secs")))
+      matched_dates_in_december[matched_date_index] <- TRUE
+    }
+  }
+  
+  return(list(matched_dates_in_april, matched_dates_in_august, matched_dates_in_december))
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 20, fig.width = 10, fig.align = "center"}
+savePar <- par(mfrow=c(9,3),  mar=c(4, 4, 0, 0))
+do_save_matched_dates_again <- FALSE
+
+# plot the scatter plots of wind direction vs. wind speed while the high recorded values of chemicals are shown:
+{
+  for(sensor_index in 1:9){  # rows of grid --> sensors
+    
+    # high value for chemical: Appluimonia
+    matched_dates_Appluimonia <- match_dates_with_meteorological_data(dates=times_unusual_Appluimonia[[sensor_index]])
+    matched_dates_Appluimonia_April <- matched_dates_Appluimonia[[1]]
+    matched_dates_Appluimonia_August <- matched_dates_Appluimonia[[2]]
+    matched_dates_Appluimonia_December <- matched_dates_Appluimonia[[3]]
+    
+    # high value for chemical: Chlorodinine
+    matched_dates_Chlorodinine <- match_dates_with_meteorological_data(dates=times_unusual_Chlorodinine[[sensor_index]])
+    matched_dates_Chlorodinine_April <- matched_dates_Chlorodinine[[1]]
+    matched_dates_Chlorodinine_August <- matched_dates_Chlorodinine[[2]]
+    matched_dates_Chlorodinine_December <- matched_dates_Chlorodinine[[3]]
+    
+    # high value for chemical: Methylosmolene
+    matched_dates_Methylosmolene <- match_dates_with_meteorological_data(dates=times_unusual_Methylosmolene[[sensor_index]])
+    matched_dates_Methylosmolene_April <- matched_dates_Methylosmolene[[1]]
+    matched_dates_Methylosmolene_August <- matched_dates_Methylosmolene[[2]]
+    matched_dates_Methylosmolene_December <- matched_dates_Methylosmolene[[3]]
+    
+    # high value for chemical: AGOC-3A
+    matched_dates_AGOC3A <- match_dates_with_meteorological_data(dates=times_unusual_AGOC3A[[sensor_index]])
+    matched_dates_AGOC3A_April <- matched_dates_AGOC3A[[1]]
+    matched_dates_AGOC3A_August <- matched_dates_AGOC3A[[2]]
+    matched_dates_AGOC3A_December <- matched_dates_AGOC3A[[3]]
+    
+    # save the matched dates for possible future use:
+    {
+      if(do_save_matched_dates_again == TRUE){
+        address_file_base <- getwd()
+        address_file_base <- paste(address_file_base, "/Dataset/Dataset2/mySavings/meteorological_matched_dates/sensor", sensor_index, "/", sep="")
+        ##########
+        address_file <- paste(address_file_base, "/matched_dates_Appluimonia_April.RData", sep="")
+        save(matched_dates_Appluimonia_April, file = address_file)
+        address_file <- paste(address_file_base, "/matched_dates_Appluimonia_August.RData", sep="")
+        save(matched_dates_Appluimonia_August, file = address_file)
+        address_file <- paste(address_file_base, "/matched_dates_Appluimonia_December.RData", sep="")
+        save(matched_dates_Appluimonia_December, file = address_file)
+        ##########
+        address_file <- paste(address_file_base, "/matched_dates_Chlorodinine_April.RData", sep="")
+        save(matched_dates_Chlorodinine_April, file = address_file)
+        address_file <- paste(address_file_base, "/matched_dates_Chlorodinine_August.RData", sep="")
+        save(matched_dates_Chlorodinine_August, file = address_file)
+        address_file <- paste(address_file_base, "/matched_dates_Chlorodinine_December.RData", sep="")
+        save(matched_dates_Chlorodinine_December, file = address_file)
+        ##########
+        address_file <- paste(address_file_base, "/matched_dates_Methylosmolene_April.RData", sep="")
+        save(matched_dates_Methylosmolene_April, file = address_file)
+        address_file <- paste(address_file_base, "/matched_dates_Methylosmolene_August.RData", sep="")
+        save(matched_dates_Methylosmolene_August, file = address_file)
+        address_file <- paste(address_file_base, "/matched_dates_Methylosmolene_December.RData", sep="")
+        save(matched_dates_Methylosmolene_December, file = address_file)
+      }
+    }
+    
+    for(month_index in 1:3){  # columns of grid --> months: April, August, December
+      
+      color_pallete <- c("steelblue", "red", "darkgreen", "burlywood4", "chocolate1")
+      
+      if(month_index == 1){
+        # ----------- April:
+        index_of_normal_points <- (!matched_dates_Appluimonia_April) & (!matched_dates_Chlorodinine_April) & (!matched_dates_Methylosmolene_April) & (!matched_dates_AGOC3A_April)
+        colors <- rep(NA, length(meteorological_data_april$`Wind Speed (m/s)`))
+        
+        # normal points:
+        colors[index_of_normal_points] <- color_pallete[1]
+        x <- meteorological_data_april$`Wind Speed (m/s)`[index_of_normal_points]
+        y <- meteorological_data_april$`Wind Direction`[index_of_normal_points]
+        if(sensor_index != 9){
+          plot(x=x, y=y, xlab="", ylab="Wind direction", col=adjustcolor(color_pallete[1], 0.2), panel.first = grid(), pch=16, cex=2, xlim=c(0,7), ylim=c(0,360))
+        }
+        else{
+          plot(x=x, y=y, xlab="Wind speed (m/s)", ylab="Wind direction", col=adjustcolor(color_pallete[1], 0.2), panel.first = grid(), pch=16, cex=2, xlim=c(0,7), ylim=c(0,360))
+        }
+      
+        # points of high Appluimonia:
+        colors[matched_dates_Appluimonia_April] <- color_pallete[2]
+        x <- meteorological_data_april$`Wind Speed (m/s)`[matched_dates_Appluimonia_April]
+        y <- meteorological_data_april$`Wind Direction`[matched_dates_Appluimonia_April]
+        lines(x=x, y=y, xlab="", ylab="Wind direction", col="black", bg=adjustcolor(color_pallete[2], 0.5), panel.first = grid(), pch=25, cex=4, xlim=c(0,7), ylim=c(0,360), type="p")
+        
+        # points of high Chlorodinine:
+        colors[matched_dates_Chlorodinine_April] <- color_pallete[3]
+        x <- meteorological_data_april$`Wind Speed (m/s)`[matched_dates_Chlorodinine_April]
+        y <- meteorological_data_april$`Wind Direction`[matched_dates_Chlorodinine_April]
+        lines(x=x, y=y, xlab="", ylab="Wind direction", col="black", bg=adjustcolor(color_pallete[3], 0.5), panel.first = grid(), pch=23, cex=5, xlim=c(0,7), ylim=c(0,360), type="p")
+      
+        # points of high Methylosmolene:
+        colors[matched_dates_Methylosmolene_April] <- color_pallete[4]
+        x <- meteorological_data_april$`Wind Speed (m/s)`[matched_dates_Methylosmolene_April]
+        y <- meteorological_data_april$`Wind Direction`[matched_dates_Methylosmolene_April]
+        lines(x=x, y=y, xlab="", ylab="Wind direction", col="black", bg=adjustcolor(color_pallete[4], 0.5), panel.first = grid(), pch=22, cex=5, xlim=c(0,7), ylim=c(0,360), type="p")
+      
+        # points of high AGOC-3A:
+        colors[matched_dates_AGOC3A_April] <- color_pallete[5]
+        x <- meteorological_data_april$`Wind Speed (m/s)`[matched_dates_AGOC3A_April]
+        y <- meteorological_data_april$`Wind Direction`[matched_dates_AGOC3A_April]
+        lines(x=x, y=y, xlab="", ylab="Wind direction", col="black", bg=adjustcolor(color_pallete[5], 0.5), panel.first = grid(), pch=24, cex=4, xlim=c(0,7), ylim=c(0,360), type="p")
+      }
+      
+      else if(month_index == 2){
+        # ----------- August:
+        index_of_normal_points <- (!matched_dates_Appluimonia_August) & (!matched_dates_Chlorodinine_August) & (!matched_dates_Methylosmolene_August) & (!matched_dates_AGOC3A_August)
+        
+        # normal points:
+        colors[index_of_normal_points] <- color_pallete[1]
+        x <- meteorological_data_august$`Wind Speed (m/s)`[index_of_normal_points]
+        y <- meteorological_data_august$`Wind Direction`[index_of_normal_points]
+        if(sensor_index != 9){
+          plot(x=x, y=y, xlab="", ylab="", col=adjustcolor(color_pallete[1], 0.2), panel.first = grid(), pch=16, cex=2, xlim=c(0,7), ylim=c(0,360))
+        }
+        else{
+          plot(x=x, y=y, xlab="Wind speed (m/s)", ylab="", col=adjustcolor(color_pallete[1], 0.2), panel.first = grid(), pch=16, cex=2, xlim=c(0,7), ylim=c(0,360))
+        }
+      
+        # points of high Appluimonia:
+        colors[matched_dates_Appluimonia_August] <- color_pallete[2]
+        x <- meteorological_data_august$`Wind Speed (m/s)`[matched_dates_Appluimonia_August]
+        y <- meteorological_data_august$`Wind Direction`[matched_dates_Appluimonia_August]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[2], 0.5), panel.first = grid(), pch=25, cex=4, xlim=c(0,7), ylim=c(0,360), type="p")
+        
+        # points of high Chlorodinine:
+        colors[matched_dates_Chlorodinine_August] <- color_pallete[3]
+        x <- meteorological_data_august$`Wind Speed (m/s)`[matched_dates_Chlorodinine_August]
+        y <- meteorological_data_august$`Wind Direction`[matched_dates_Chlorodinine_August]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[3], 0.5), panel.first = grid(), pch=23, cex=5, xlim=c(0,7), ylim=c(0,360), type="p")
+      
+        # points of high Methylosmolene:
+        colors[matched_dates_Methylosmolene_August] <- color_pallete[4]
+        x <- meteorological_data_august$`Wind Speed (m/s)`[matched_dates_Methylosmolene_August]
+        y <- meteorological_data_august$`Wind Direction`[matched_dates_Methylosmolene_August]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[4], 0.5), panel.first = grid(), pch=22, cex=5, xlim=c(0,7), ylim=c(0,360), type="p")
+      
+        # points of high AGOC-3A:
+        colors[matched_dates_AGOC3A_August] <- color_pallete[5]
+        x <- meteorological_data_august$`Wind Speed (m/s)`[matched_dates_AGOC3A_August]
+        y <- meteorological_data_august$`Wind Direction`[matched_dates_AGOC3A_August]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[5], 0.5), panel.first = grid(), pch=24, cex=4, xlim=c(0,7), ylim=c(0,360), type="p")
+      }
+      
+      else if(month_index == 3){
+        # ----------- December:
+        index_of_normal_points <- (!matched_dates_Appluimonia_December) & (!matched_dates_Chlorodinine_December) & (!matched_dates_Methylosmolene_December) & (!matched_dates_AGOC3A_December)
+        
+        # normal points:
+        colors[index_of_normal_points] <- color_pallete[1]
+        x <- meteorological_data_december$`Wind Speed (m/s)`[index_of_normal_points]
+        y <- meteorological_data_december$`Wind Direction`[index_of_normal_points]
+        if(sensor_index != 9){
+          plot(x=x, y=y, xlab="", ylab="", col=adjustcolor(color_pallete[1], 0.2), panel.first = grid(), pch=16, cex=2, xlim=c(0,7), ylim=c(0,360))
+        }
+        else{
+          plot(x=x, y=y, xlab="Wind speed (m/s)", ylab="Wind direction", col=adjustcolor(color_pallete[1], 0.2), panel.first = grid(), pch=16, cex=2, xlim=c(0,7), ylim=c(0,360))
+        }
+      
+        # points of high Appluimonia:
+        colors[matched_dates_Appluimonia_December] <- color_pallete[2]
+        x <- meteorological_data_december$`Wind Speed (m/s)`[matched_dates_Appluimonia_December]
+        y <- meteorological_data_december$`Wind Direction`[matched_dates_Appluimonia_December]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[2], 0.5), panel.first = grid(), pch=25, cex=4, xlim=c(0,7), ylim=c(0,360), type="p")
+        
+        # points of high Chlorodinine:
+        colors[matched_dates_Chlorodinine_December] <- color_pallete[3]
+        x <- meteorological_data_december$`Wind Speed (m/s)`[matched_dates_Chlorodinine_December]
+        y <- meteorological_data_december$`Wind Direction`[matched_dates_Chlorodinine_December]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[3], 0.5), panel.first = grid(), pch=23, cex=5, xlim=c(0,7), ylim=c(0,360), type="p")
+      
+        # points of high Methylosmolene:
+        colors[matched_dates_Methylosmolene_December] <- color_pallete[4]
+        x <- meteorological_data_december$`Wind Speed (m/s)`[matched_dates_Methylosmolene_December]
+        y <- meteorological_data_december$`Wind Direction`[matched_dates_Methylosmolene_December]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[4], 0.5), panel.first = grid(), pch=22, cex=5, xlim=c(0,7), ylim=c(0,360), type="p")
+      
+        # points of high AGOC-3A:
+        colors[matched_dates_AGOC3A_December] <- color_pallete[5]
+        x <- meteorological_data_december$`Wind Speed (m/s)`[matched_dates_AGOC3A_December]
+        y <- meteorological_data_december$`Wind Direction`[matched_dates_AGOC3A_December]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[5], 0.5), panel.first = grid(), pch=24, cex=4, xlim=c(0,7), ylim=c(0,360), type="p")
+      }
+    }
+  }
+}
+
+par(savePar)
+```
+\captionof{figure}{The scatter plot of wind speed and direction while the unusual high values of chemicals recorded by the sensors are highlighted. The rows correspond to the sensor indices (1 to 9) and the first, second, and third columns correspond to April, August, and December, respectively. The color of points match the used colors in figures \ref{figure_loon_sensors_1} and \ref{figure_loon_sensors_2}. The opposite red rectangle, the green diamond, the brown rectangle, and the orange triangle correspond to high values of Appluimonia, Chlorodinine, Methylosmolene, and AGOC-3A, respectively. The small blue points correspond to the normal chemical amounts.}
+\label{figure_meteorological_matchedDates}
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE, fig.height = 20, fig.width = 10, fig.align = "center"}
+savePar <- par(mfrow=c(9,3),  mar=c(4, 4, 0, 0))
+
+# plot the time series plots of wind direction while the high recorded values of chemicals are shown:
+{
+  for(sensor_index in 1:9){  # rows of grid --> sensors
+    
+    # high value for chemical: Appluimonia
+    matched_dates_Appluimonia <- match_dates_with_meteorological_data(dates=times_unusual_Appluimonia[[sensor_index]])
+    matched_dates_Appluimonia_April <- matched_dates_Appluimonia[[1]]
+    matched_dates_Appluimonia_August <- matched_dates_Appluimonia[[2]]
+    matched_dates_Appluimonia_December <- matched_dates_Appluimonia[[3]]
+    
+    # high value for chemical: Chlorodinine
+    matched_dates_Chlorodinine <- match_dates_with_meteorological_data(dates=times_unusual_Chlorodinine[[sensor_index]])
+    matched_dates_Chlorodinine_April <- matched_dates_Chlorodinine[[1]]
+    matched_dates_Chlorodinine_August <- matched_dates_Chlorodinine[[2]]
+    matched_dates_Chlorodinine_December <- matched_dates_Chlorodinine[[3]]
+    
+    # high value for chemical: Methylosmolene
+    matched_dates_Methylosmolene <- match_dates_with_meteorological_data(dates=times_unusual_Methylosmolene[[sensor_index]])
+    matched_dates_Methylosmolene_April <- matched_dates_Methylosmolene[[1]]
+    matched_dates_Methylosmolene_August <- matched_dates_Methylosmolene[[2]]
+    matched_dates_Methylosmolene_December <- matched_dates_Methylosmolene[[3]]
+    
+    # high value for chemical: AGOC-3A
+    matched_dates_AGOC3A <- match_dates_with_meteorological_data(dates=times_unusual_AGOC3A[[sensor_index]])
+    matched_dates_AGOC3A_April <- matched_dates_AGOC3A[[1]]
+    matched_dates_AGOC3A_August <- matched_dates_AGOC3A[[2]]
+    matched_dates_AGOC3A_December <- matched_dates_AGOC3A[[3]]
+    
+    for(month_index in 1:3){  # columns of grid --> months: April, August, December
+      
+      color_pallete <- c("steelblue", "red", "darkgreen", "burlywood4", "chocolate1")
+      
+      if(month_index == 1){
+        # ----------- April:
+        index_of_normal_points <- (!matched_dates_Appluimonia_April) & (!matched_dates_Chlorodinine_April) & (!matched_dates_Methylosmolene_April) & (!matched_dates_AGOC3A_April)
+        colors <- rep(NA, length(meteorological_data_april$`Wind Speed (m/s)`))
+        
+        # plot the time series:
+        x <- meteorological_data_april$Date
+        y <- meteorological_data_april$`Wind Direction`
+        plot(x=x, y=y, xlab="", ylab="Wind direction", col=adjustcolor(color_pallete[1], 1), panel.first = grid(), pch=16, cex=2, ylim=c(0,360), type="l", lwd=2)
+        
+        # normal points:
+        colors[index_of_normal_points] <- color_pallete[1]
+        x <- meteorological_data_april$Date[index_of_normal_points]
+        y <- meteorological_data_april$`Wind Direction`[index_of_normal_points]
+        if(sensor_index != 9){
+          lines(x=x, y=y, xlab="", ylab="Wind direction", col=adjustcolor(color_pallete[1], 0.2), panel.first = grid(), pch=16, cex=2, ylim=c(0,360), type="p")
+        }
+        else{
+          lines(x=x, y=y, xlab="Wind speed (m/s)", ylab="Wind direction", col=adjustcolor(color_pallete[1], 0.2), panel.first = grid(), pch=16, cex=2, xlim=c(0,7), ylim=c(0,360), type="p")
+        }
+      
+        # points of high Appluimonia:
+        colors[matched_dates_Appluimonia_April] <- color_pallete[2]
+        x <- meteorological_data_april$Date[matched_dates_Appluimonia_April]
+        y <- meteorological_data_april$`Wind Direction`[matched_dates_Appluimonia_April]
+        lines(x=x, y=y, xlab="", ylab="Wind direction", col="black", bg=adjustcolor(color_pallete[2], 0.5), panel.first = grid(), pch=25, cex=4, ylim=c(0,360), type="p")
+        
+        # points of high Chlorodinine:
+        colors[matched_dates_Chlorodinine_April] <- color_pallete[3]
+        x <- meteorological_data_april$Date[matched_dates_Chlorodinine_April]
+        y <- meteorological_data_april$`Wind Direction`[matched_dates_Chlorodinine_April]
+        lines(x=x, y=y, xlab="", ylab="Wind direction", col="black", bg=adjustcolor(color_pallete[3], 0.5), panel.first = grid(), pch=23, cex=5, ylim=c(0,360), type="p")
+      
+        # points of high Methylosmolene:
+        colors[matched_dates_Methylosmolene_April] <- color_pallete[4]
+        x <- meteorological_data_april$Date[matched_dates_Methylosmolene_April]
+        y <- meteorological_data_april$`Wind Direction`[matched_dates_Methylosmolene_April]
+        lines(x=x, y=y, xlab="", ylab="Wind direction", col="black", bg=adjustcolor(color_pallete[4], 0.5), panel.first = grid(), pch=22, cex=5, ylim=c(0,360), type="p")
+      
+        # points of high AGOC-3A:
+        colors[matched_dates_AGOC3A_April] <- color_pallete[5]
+        x <- meteorological_data_april$Date[matched_dates_AGOC3A_April]
+        y <- meteorological_data_april$`Wind Direction`[matched_dates_AGOC3A_April]
+        lines(x=x, y=y, xlab="", ylab="Wind direction", col="black", bg=adjustcolor(color_pallete[5], 0.5), panel.first = grid(), pch=24, cex=4, ylim=c(0,360), type="p")
+      }
+      
+      else if(month_index == 2){
+        # ----------- August:
+        index_of_normal_points <- (!matched_dates_Appluimonia_August) & (!matched_dates_Chlorodinine_August) & (!matched_dates_Methylosmolene_August) & (!matched_dates_AGOC3A_August)
+        
+        # plot the time series:
+        x <- meteorological_data_august$Date
+        y <- meteorological_data_august$`Wind Direction`
+        plot(x=x, y=y, xlab="", ylab="", col=adjustcolor(color_pallete[1], 1), panel.first = grid(), pch=16, cex=2, ylim=c(0,360), type="l", lwd=2)
+        
+        # normal points:
+        colors[index_of_normal_points] <- color_pallete[1]
+        x <- meteorological_data_august$Date[index_of_normal_points]
+        y <- meteorological_data_august$`Wind Direction`[index_of_normal_points]
+        if(sensor_index != 9){
+          lines(x=x, y=y, xlab="", ylab="", col=adjustcolor(color_pallete[1], 0.2), panel.first = grid(), pch=16, cex=2, xlim=c(0,7), ylim=c(0,360), type="p")
+        }
+        else{
+          lines(x=x, y=y, xlab="Wind speed (m/s)", ylab="", col=adjustcolor(color_pallete[1], 0.2), panel.first = grid(), pch=16, cex=2, xlim=c(0,7), ylim=c(0,360), type="p")
+        }
+      
+        # points of high Appluimonia:
+        colors[matched_dates_Appluimonia_August] <- color_pallete[2]
+        x <- meteorological_data_august$Date[matched_dates_Appluimonia_August]
+        y <- meteorological_data_august$`Wind Direction`[matched_dates_Appluimonia_August]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[2], 0.5), panel.first = grid(), pch=25, cex=4, xlim=c(0,7), ylim=c(0,360), type="p")
+        
+        # points of high Chlorodinine:
+        colors[matched_dates_Chlorodinine_August] <- color_pallete[3]
+        x <- meteorological_data_august$Date[matched_dates_Chlorodinine_August]
+        y <- meteorological_data_august$`Wind Direction`[matched_dates_Chlorodinine_August]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[3], 0.5), panel.first = grid(), pch=23, cex=5, xlim=c(0,7), ylim=c(0,360), type="p")
+      
+        # points of high Methylosmolene:
+        colors[matched_dates_Methylosmolene_August] <- color_pallete[4]
+        x <- meteorological_data_august$Date[matched_dates_Methylosmolene_August]
+        y <- meteorological_data_august$`Wind Direction`[matched_dates_Methylosmolene_August]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[4], 0.5), panel.first = grid(), pch=22, cex=5, xlim=c(0,7), ylim=c(0,360), type="p")
+      
+        # points of high AGOC-3A:
+        colors[matched_dates_AGOC3A_August] <- color_pallete[5]
+        x <- meteorological_data_august$Date[matched_dates_AGOC3A_August]
+        y <- meteorological_data_august$`Wind Direction`[matched_dates_AGOC3A_August]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[5], 0.5), panel.first = grid(), pch=24, cex=4, xlim=c(0,7), ylim=c(0,360), type="p")
+      }
+      
+      else if(month_index == 3){
+        # ----------- December:
+        index_of_normal_points <- (!matched_dates_Appluimonia_December) & (!matched_dates_Chlorodinine_December) & (!matched_dates_Methylosmolene_December) & (!matched_dates_AGOC3A_December)
+        
+        # plot the time series:
+        x <- meteorological_data_december$Date
+        y <- meteorological_data_december$`Wind Direction`
+        plot(x=x, y=y, xlab="", ylab="", col=adjustcolor(color_pallete[1], 1), panel.first = grid(), pch=16, cex=2, ylim=c(0,360), type="l", lwd=2)
+        
+        # normal points:
+        colors[index_of_normal_points] <- color_pallete[1]
+        x <- meteorological_data_december$Date[index_of_normal_points]
+        y <- meteorological_data_december$`Wind Direction`[index_of_normal_points]
+        if(sensor_index != 9){
+          lines(x=x, y=y, xlab="", ylab="", col=adjustcolor(color_pallete[1], 0.2), panel.first = grid(), pch=16, cex=2, xlim=c(0,7), ylim=c(0,360), type="p")
+        }
+        else{
+          lines(x=x, y=y, xlab="Wind speed (m/s)", ylab="Wind direction", col=adjustcolor(color_pallete[1], 0.2), panel.first = grid(), pch=16, cex=2, xlim=c(0,7), ylim=c(0,360), type="p")
+        }
+      
+        # points of high Appluimonia:
+        colors[matched_dates_Appluimonia_December] <- color_pallete[2]
+        x <- meteorological_data_december$Date[matched_dates_Appluimonia_December]
+        y <- meteorological_data_december$`Wind Direction`[matched_dates_Appluimonia_December]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[2], 0.5), panel.first = grid(), pch=25, cex=4, xlim=c(0,7), ylim=c(0,360), type="p")
+        
+        # points of high Chlorodinine:
+        colors[matched_dates_Chlorodinine_December] <- color_pallete[3]
+        x <- meteorological_data_december$Date[matched_dates_Chlorodinine_December]
+        y <- meteorological_data_december$`Wind Direction`[matched_dates_Chlorodinine_December]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[3], 0.5), panel.first = grid(), pch=23, cex=5, xlim=c(0,7), ylim=c(0,360), type="p")
+      
+        # points of high Methylosmolene:
+        colors[matched_dates_Methylosmolene_December] <- color_pallete[4]
+        x <- meteorological_data_december$Date[matched_dates_Methylosmolene_December]
+        y <- meteorological_data_december$`Wind Direction`[matched_dates_Methylosmolene_December]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[4], 0.5), panel.first = grid(), pch=22, cex=5, xlim=c(0,7), ylim=c(0,360), type="p")
+      
+        # points of high AGOC-3A:
+        colors[matched_dates_AGOC3A_December] <- color_pallete[5]
+        x <- meteorological_data_december$Date[matched_dates_AGOC3A_December]
+        y <- meteorological_data_december$`Wind Direction`[matched_dates_AGOC3A_December]
+        lines(x=x, y=y, xlab="", ylab="", col="black", bg=adjustcolor(color_pallete[5], 0.5), panel.first = grid(), pch=24, cex=4, xlim=c(0,7), ylim=c(0,360), type="p")
+      }
+    }
+  }
+}
+
+par(savePar)
+```
+\captionof{figure}{The time series of wind direction while the unusual high values of chemicals recorded by the sensors are highlighted. The rows correspond to the sensor indices (1 to 9) and the first, second, and third columns correspond to April, August, and December, respectively. The color of points match the used colors in figures \ref{figure_loon_sensors_1} and \ref{figure_loon_sensors_2}. The opposite red rectangle, the green diamond, the brown rectangle, and the orange triangle correspond to high values of Appluimonia, Chlorodinine, Methylosmolene, and AGOC-3A, respectively. The small blue points correspond to the normal chemical amounts.}
+\label{figure_meteorological_matchedDates_timeSeries}
+
+\bigbreak
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{./images/table_Appluimonia}
+\captionof{figure}{Table for analyzing which factories are responsible for high values of Appluimonia chemical.}
+\label{figure_table_Appluimonia}
+\end{center}
+
+\bigbreak
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{./images/table_Chlorodinine}
+\captionof{figure}{Table for analyzing which factories are responsible for high values of Chlorodinine chemical.}
+\label{figure_table_Chlorodinine}
+\end{center}
+
+\bigbreak
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{./images/table_Methylosmolene}
+\captionof{figure}{Table for analyzing which factories are responsible for high values of Methylosmolene chemical.}
+\label{figure_table_Methylosmolene}
+\end{center}
+
+\bigbreak
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{./images/table_AGOC3A}
+\captionof{figure}{Table for analyzing which factories are responsible for high values of AGOC-3A chemical.}
+\label{figure_table_AGOC3A}
+\end{center}
+
+\bigbreak
+
+# Analysis of Aerial Images
+
+## The Multi-Channel Images
+
+There are $12$ multi-channel aerial images of the preserve provided in the data subset 3. The sizes of images are $650 \times 650$ pixels and they are taken from the preserve in different seasons of years 2014 to 2016. The channels of the images are blue, green, red, Near Infrared (NIR), Short-Wave Infrared (SWIR) 1, and Short-Wave Infrared (SWIR) 2. These channels include different bands in the electromagnetic spectrum. These bands are reported in Table \ref{table_bands} where their characteristics are also mentioned. 
+
+\begin{center}
+\begin{tabular}{l | c | c | l}
+\hline
+\hline
+\textbf{Band} & \textbf{Color} & \textbf{Wavelength (nm)} & \textbf{Useful for Mapping}\\
+\hline
+\hline
+B1 & Blue & 450-520 & penetrates water, shows thin clouds\\
+\hline
+B2 & Green & 520-600 & shows different types of plants\\
+\hline
+B3 & Red & 630-690 & shows vegetation color and mineral deposits\\
+\hline
+B4 & NIR & 770-900 & partially absorbed by water, shows chlorophyll and vegetation\\
+\hline
+B5 & SWIR 1 & 1550-1750 & absorbed by liquid water, shows moisture of soil and vegetation\\
+\hline
+B6 & SWIR 2 & 2090-2350 & insenitive to vegetation, shows differences in soil mineral\\
+\hline
+\hline
+\end{tabular}
+\captionof{table}{Different bands of multi-channel images and their characteristics.}
+\label{table_bands}
+\end{center}
+
+```{r, eval=TRUE, echo=FALSE}
+# load the dataset:
+{
+  image01_multi <- read.csv("./Dataset/Dataset3/image01_2014_03_17.csv", header=TRUE)
+  image02_multi <- read.csv("./Dataset/Dataset3/image02_2014_08_24.csv", header=TRUE)
+  image03_multi <- read.csv("./Dataset/Dataset3/image03_2014_11_28.csv", header=TRUE)
+  image04_multi <- read.csv("./Dataset/Dataset3/image04_2014_12_30.csv", header=TRUE)
+  image05_multi <- read.csv("./Dataset/Dataset3/image05_2015_02_15.csv", header=TRUE)
+  image06_multi <- read.csv("./Dataset/Dataset3/image06_2015_06_24.csv", header=TRUE)
+  image07_multi <- read.csv("./Dataset/Dataset3/image07_2015_09_12.csv", header=TRUE)
+  image08_multi <- read.csv("./Dataset/Dataset3/image08_2015_11_15.csv", header=TRUE)
+  image09_multi <- read.csv("./Dataset/Dataset3/image09_2016_03_06.csv", header=TRUE)
+  image10_multi <- read.csv("./Dataset/Dataset3/image10_2016_06_26.csv", header=TRUE)
+  image11_multi <- read.csv("./Dataset/Dataset3/image11_2016_09_06.csv", header=TRUE)
+  image12_multi <- read.csv("./Dataset/Dataset3/image12_2016_12_19.csv", header=TRUE)
+}
+```
+
+```{r, eval=FALSE, echo=FALSE}
+# changing the images from vector-shape to image-shape and then save them:
+{
+  # https://stackoverflow.com/questions/10961141/setting-up-a-3d-matrix-in-r-and-accessing-certain-elements
+  n_rows <- dim(image01_multi)[1]
+  someData <- rep(NaN, 651*651*8)  
+  image01_multi_notReshaped <- array(someData, c(651, 651, 8))
+  image02_multi_notReshaped <- array(someData, c(651, 651, 8))
+  image03_multi_notReshaped <- array(someData, c(651, 651, 8))
+  image04_multi_notReshaped <- array(someData, c(651, 651, 8))
+  image05_multi_notReshaped <- array(someData, c(651, 651, 8))
+  image06_multi_notReshaped <- array(someData, c(651, 651, 8))
+  image07_multi_notReshaped <- array(someData, c(651, 651, 8))
+  image08_multi_notReshaped <- array(someData, c(651, 651, 8))
+  image09_multi_notReshaped <- array(someData, c(651, 651, 8))
+  image10_multi_notReshaped <- array(someData, c(651, 651, 8))
+  image11_multi_notReshaped <- array(someData, c(651, 651, 8))
+  image12_multi_notReshaped <- array(someData, c(651, 651, 8))
+  
+  for(row_index in 1:n_rows){
+    x = image01_multi[row_index,1]
+    y = image01_multi[row_index,2]
+    image01_multi_notReshaped[x, y, 1] <- image01_multi[row_index, 3]
+    image01_multi_notReshaped[x, y, 2] <- image01_multi[row_index, 4]
+    image01_multi_notReshaped[x, y, 3] <- image01_multi[row_index, 5]
+    image01_multi_notReshaped[x, y, 4] <- image01_multi[row_index, 6]
+    image01_multi_notReshaped[x, y, 5] <- image01_multi[row_index, 7]
+    image01_multi_notReshaped[x, y, 6] <- image01_multi[row_index, 8]
+  }
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image01_multi_notReshaped.RData", sep="/")
+  save(image01_multi_notReshaped, file = address_file)
+  remove('image01_multi')
+  remove('image01_multi_notReshaped')
+  
+  for(row_index in 1:n_rows){
+    x = image02_multi[row_index,1]
+    y = image02_multi[row_index,2] 
+    image02_multi_notReshaped[x, y, 1] <- image02_multi[row_index, 3]
+    image02_multi_notReshaped[x, y, 2] <- image02_multi[row_index, 4]
+    image02_multi_notReshaped[x, y, 3] <- image02_multi[row_index, 5]
+    image02_multi_notReshaped[x, y, 4] <- image02_multi[row_index, 6]
+    image02_multi_notReshaped[x, y, 5] <- image02_multi[row_index, 7]
+    image02_multi_notReshaped[x, y, 6] <- image02_multi[row_index, 8]
+  }
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image02_multi_notReshaped.RData", sep="/")
+  save(image02_multi_notReshaped, file = address_file)
+  remove('image02_multi')
+  remove('image02_multi_notReshaped')
+  
+  for(row_index in 1:n_rows){
+    x = image03_multi[row_index,1]
+    y = image03_multi[row_index,2] 
+    image03_multi_notReshaped[x, y, 1] <- image03_multi[row_index, 3]
+    image03_multi_notReshaped[x, y, 2] <- image03_multi[row_index, 4]
+    image03_multi_notReshaped[x, y, 3] <- image03_multi[row_index, 5]
+    image03_multi_notReshaped[x, y, 4] <- image03_multi[row_index, 6]
+    image03_multi_notReshaped[x, y, 5] <- image03_multi[row_index, 7]
+    image03_multi_notReshaped[x, y, 6] <- image03_multi[row_index, 8]
+  }
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image03_multi_notReshaped.RData", sep="/")
+  save(image03_multi_notReshaped, file = address_file)
+  remove('image03_multi')
+  remove('image03_multi_notReshaped')
+  
+  for(row_index in 1:n_rows){
+    x = image04_multi[row_index,1]
+    y = image04_multi[row_index,2]  
+    image04_multi_notReshaped[x, y, 1] <- image04_multi[row_index, 3]
+    image04_multi_notReshaped[x, y, 2] <- image04_multi[row_index, 4]
+    image04_multi_notReshaped[x, y, 3] <- image04_multi[row_index, 5]
+    image04_multi_notReshaped[x, y, 4] <- image04_multi[row_index, 6]
+    image04_multi_notReshaped[x, y, 5] <- image04_multi[row_index, 7]
+    image04_multi_notReshaped[x, y, 6] <- image04_multi[row_index, 8]
+  }
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image04_multi_notReshaped.RData", sep="/")
+  save(image04_multi_notReshaped, file = address_file)
+  remove('image04_multi')
+  remove('image04_multi_notReshaped')
+  
+  for(row_index in 1:n_rows){
+    x = image05_multi[row_index,1]
+    y = image05_multi[row_index,2]
+    image05_multi_notReshaped[x, y, 1] <- image05_multi[row_index, 3]
+    image05_multi_notReshaped[x, y, 2] <- image05_multi[row_index, 4]
+    image05_multi_notReshaped[x, y, 3] <- image05_multi[row_index, 5]
+    image05_multi_notReshaped[x, y, 4] <- image05_multi[row_index, 6]
+    image05_multi_notReshaped[x, y, 5] <- image05_multi[row_index, 7]
+    image05_multi_notReshaped[x, y, 6] <- image05_multi[row_index, 8]
+  }
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image05_multi_notReshaped.RData", sep="/")
+  save(image05_multi_notReshaped, file = address_file)
+  remove('image05_multi')
+  remove('image05_multi_notReshaped')
+  
+  for(row_index in 1:n_rows){
+    x = image06_multi[row_index,1]
+    y = image06_multi[row_index,2]
+    image06_multi_notReshaped[x, y, 1] <- image06_multi[row_index, 3]
+    image06_multi_notReshaped[x, y, 2] <- image06_multi[row_index, 4]
+    image06_multi_notReshaped[x, y, 3] <- image06_multi[row_index, 5]
+    image06_multi_notReshaped[x, y, 4] <- image06_multi[row_index, 6]
+    image06_multi_notReshaped[x, y, 5] <- image06_multi[row_index, 7]
+    image06_multi_notReshaped[x, y, 6] <- image06_multi[row_index, 8]
+  }
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image06_multi_notReshaped.RData", sep="/")
+  save(image06_multi_notReshaped, file = address_file)
+  remove('image06_multi')
+  remove('image06_multi_notReshaped')
+  
+  for(row_index in 1:n_rows){
+    x = image07_multi[row_index,1]
+    y = image07_multi[row_index,2]
+    image07_multi_notReshaped[x, y, 1] <- image07_multi[row_index, 3]
+    image07_multi_notReshaped[x, y, 2] <- image07_multi[row_index, 4]
+    image07_multi_notReshaped[x, y, 3] <- image07_multi[row_index, 5]
+    image07_multi_notReshaped[x, y, 4] <- image07_multi[row_index, 6]
+    image07_multi_notReshaped[x, y, 5] <- image07_multi[row_index, 7]
+    image07_multi_notReshaped[x, y, 6] <- image07_multi[row_index, 8]
+  }
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image07_multi_notReshaped.RData", sep="/")
+  save(image07_multi_notReshaped, file = address_file)
+  remove('image07_multi')
+  remove('image07_multi_notReshaped')
+  
+  for(row_index in 1:n_rows){
+    x = image08_multi[row_index,1]
+    y = image08_multi[row_index,2]
+    image08_multi_notReshaped[x, y, 1] <- image08_multi[row_index, 3]
+    image08_multi_notReshaped[x, y, 2] <- image08_multi[row_index, 4]
+    image08_multi_notReshaped[x, y, 3] <- image08_multi[row_index, 5]
+    image08_multi_notReshaped[x, y, 4] <- image08_multi[row_index, 6]
+    image08_multi_notReshaped[x, y, 5] <- image08_multi[row_index, 7]
+    image08_multi_notReshaped[x, y, 6] <- image08_multi[row_index, 8]
+  }
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image08_multi_notReshaped.RData", sep="/")
+  save(image08_multi_notReshaped, file = address_file)
+  remove('image08_multi')
+  remove('image08_multi_notReshaped')
+  
+  for(row_index in 1:n_rows){
+    x = image09_multi[row_index,1]
+    y = image09_multi[row_index,2]
+    image09_multi_notReshaped[x, y, 1] <- image09_multi[row_index, 3]
+    image09_multi_notReshaped[x, y, 2] <- image09_multi[row_index, 4]
+    image09_multi_notReshaped[x, y, 3] <- image09_multi[row_index, 5]
+    image09_multi_notReshaped[x, y, 4] <- image09_multi[row_index, 6]
+    image09_multi_notReshaped[x, y, 5] <- image09_multi[row_index, 7]
+    image09_multi_notReshaped[x, y, 6] <- image09_multi[row_index, 8]
+  }
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image09_multi_notReshaped.RData", sep="/")
+  save(image09_multi_notReshaped, file = address_file)
+  remove('image09_multi')
+  remove('image09_multi_notReshaped')
+  
+  for(row_index in 1:n_rows){
+    x = image10_multi[row_index,1]
+    y = image10_multi[row_index,2]
+    image10_multi_notReshaped[x, y, 1] <- image10_multi[row_index, 3]
+    image10_multi_notReshaped[x, y, 2] <- image10_multi[row_index, 4]
+    image10_multi_notReshaped[x, y, 3] <- image10_multi[row_index, 5]
+    image10_multi_notReshaped[x, y, 4] <- image10_multi[row_index, 6]
+    image10_multi_notReshaped[x, y, 5] <- image10_multi[row_index, 7]
+    image10_multi_notReshaped[x, y, 6] <- image10_multi[row_index, 8]
+  }
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image10_multi_notReshaped.RData", sep="/")
+  save(image10_multi_notReshaped, file = address_file)
+  remove('image10_multi')
+  remove('image10_multi_notReshaped')
+  
+  for(row_index in 1:n_rows){
+    x = image11_multi[row_index,1]
+    y = image11_multi[row_index,2]
+    image11_multi_notReshaped[x, y, 1] <- image11_multi[row_index, 3]
+    image11_multi_notReshaped[x, y, 2] <- image11_multi[row_index, 4]
+    image11_multi_notReshaped[x, y, 3] <- image11_multi[row_index, 5]
+    image11_multi_notReshaped[x, y, 4] <- image11_multi[row_index, 6]
+    image11_multi_notReshaped[x, y, 5] <- image11_multi[row_index, 7]
+    image11_multi_notReshaped[x, y, 6] <- image11_multi[row_index, 8]
+  }
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image11_multi_notReshaped.RData", sep="/")
+  save(image11_multi_notReshaped, file = address_file)
+  remove('image11_multi')
+  remove('image11_multi_notReshaped')
+  
+  for(row_index in 1:n_rows){
+    x = image12_multi[row_index,1]
+    y = image12_multi[row_index,2]
+    image12_multi_notReshaped[x, y, 1] <- image12_multi[row_index, 3]
+    image12_multi_notReshaped[x, y, 2] <- image12_multi[row_index, 4]
+    image12_multi_notReshaped[x, y, 3] <- image12_multi[row_index, 5]
+    image12_multi_notReshaped[x, y, 4] <- image12_multi[row_index, 6]
+    image12_multi_notReshaped[x, y, 5] <- image12_multi[row_index, 7]
+    image12_multi_notReshaped[x, y, 6] <- image12_multi[row_index, 8]
+  }
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image12_multi_notReshaped.RData", sep="/")
+  save(image12_multi_notReshaped, file = address_file)
+  remove('image12_multi')
+  remove('image12_multi_notReshaped')
+}
+```
+
+```{r, echo=FALSE, eval=TRUE}
+# loading the saved images:
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image01_multi_notReshaped.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image02_multi_notReshaped.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image03_multi_notReshaped.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image04_multi_notReshaped.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image05_multi_notReshaped.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image06_multi_notReshaped.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image07_multi_notReshaped.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image08_multi_notReshaped.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image09_multi_notReshaped.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image10_multi_notReshaped.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image11_multi_notReshaped.RData", sep="/")
+  load(file = address_file)
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/mySavings/image12_multi_notReshaped.RData", sep="/")
+  load(file = address_file)
+}
+```
+
+```{r, eval=TRUE, echo=FALSE}
+# plotting the RGB images:
+{
+  # "imager" package:
+  # https://cran.r-project.org/web/packages/imager/vignettes/pixsets.html
+  # https://cran.r-project.org/web/packages/imager/vignettes/gettingstarted.html
+  suppressMessages(library(imager))
+  
+  someData2 <- rep(NaN, 651*651*3)
+  image01_multi_RGB <- array(someData2, c(651, 651, 3))
+  image01_multi_RGB[,,1] <- image01_multi_notReshaped[,,3]
+  image01_multi_RGB[,,2] <- image01_multi_notReshaped[,,2]
+  image01_multi_RGB[,,3] <- image01_multi_notReshaped[,,1]
+  
+  image02_multi_RGB <- array(someData2, c(651, 651, 3))
+  image02_multi_RGB[,,1] <- image02_multi_notReshaped[,,3]
+  image02_multi_RGB[,,2] <- image02_multi_notReshaped[,,2]
+  image02_multi_RGB[,,3] <- image02_multi_notReshaped[,,1]
+  
+  image03_multi_RGB <- array(someData2, c(651, 651, 3))
+  image03_multi_RGB[,,1] <- image03_multi_notReshaped[,,3]
+  image03_multi_RGB[,,2] <- image03_multi_notReshaped[,,2]
+  image03_multi_RGB[,,3] <- image03_multi_notReshaped[,,1]
+  
+  image04_multi_RGB <- array(someData2, c(651, 651, 3))
+  image04_multi_RGB[,,1] <- image04_multi_notReshaped[,,3]
+  image04_multi_RGB[,,2] <- image04_multi_notReshaped[,,2]
+  image04_multi_RGB[,,3] <- image04_multi_notReshaped[,,1]
+  
+  image05_multi_RGB <- array(someData2, c(651, 651, 3))
+  image05_multi_RGB[,,1] <- image05_multi_notReshaped[,,3]
+  image05_multi_RGB[,,2] <- image05_multi_notReshaped[,,2]
+  image05_multi_RGB[,,3] <- image05_multi_notReshaped[,,1]
+  
+  image06_multi_RGB <- array(someData2, c(651, 651, 3))
+  image06_multi_RGB[,,1] <- image06_multi_notReshaped[,,3]
+  image06_multi_RGB[,,2] <- image06_multi_notReshaped[,,2]
+  image06_multi_RGB[,,3] <- image06_multi_notReshaped[,,1]
+  
+  image07_multi_RGB <- array(someData2, c(651, 651, 3))
+  image07_multi_RGB[,,1] <- image07_multi_notReshaped[,,3]
+  image07_multi_RGB[,,2] <- image07_multi_notReshaped[,,2]
+  image07_multi_RGB[,,3] <- image07_multi_notReshaped[,,1]
+  
+  image08_multi_RGB <- array(someData2, c(651, 651, 3))
+  image08_multi_RGB[,,1] <- image08_multi_notReshaped[,,3]
+  image08_multi_RGB[,,2] <- image08_multi_notReshaped[,,2]
+  image08_multi_RGB[,,3] <- image08_multi_notReshaped[,,1]
+  
+  image09_multi_RGB <- array(someData2, c(651, 651, 3))
+  image09_multi_RGB[,,1] <- image09_multi_notReshaped[,,3]
+  image09_multi_RGB[,,2] <- image09_multi_notReshaped[,,2]
+  image09_multi_RGB[,,3] <- image09_multi_notReshaped[,,1]
+  
+  image10_multi_RGB <- array(someData2, c(651, 651, 3))
+  image10_multi_RGB[,,1] <- image10_multi_notReshaped[,,3]
+  image10_multi_RGB[,,2] <- image10_multi_notReshaped[,,2]
+  image10_multi_RGB[,,3] <- image10_multi_notReshaped[,,1]
+  
+  image11_multi_RGB <- array(someData2, c(651, 651, 3))
+  image11_multi_RGB[,,1] <- image11_multi_notReshaped[,,3]
+  image11_multi_RGB[,,2] <- image11_multi_notReshaped[,,2]
+  image11_multi_RGB[,,3] <- image11_multi_notReshaped[,,1]
+  
+  image12_multi_RGB <- array(someData2, c(651, 651, 3))
+  image12_multi_RGB[,,1] <- image12_multi_notReshaped[,,3]
+  image12_multi_RGB[,,2] <- image12_multi_notReshaped[,,2]
+  image12_multi_RGB[,,3] <- image12_multi_notReshaped[,,1]
+  
+  # https://cran.r-project.org/web/packages/imager/vignettes/pixsets.html
+  # https://rdrr.io/cran/imager/man/as.cimg.array.html
+  # https://rdrr.io/cran/imager/man/as.cimg.html
+  #suppressMessages(image <- as.cimg(image01_multi_RGB, dim=c(651,651,3)))
+  #title <- "RGB image (March 2014)"
+  #plot(image, main=title, axes=FALSE)
+}
+```
+
+## Estimation of Scale and Orientation of Images
+
+In the dataset, there is an RGB image of the Boonsong lake, located within the preserve. This RGB image is shown in Fig. \ref{figure_boonsong_lake}. Furthermore, this lake was visually found in the RGB image of June 2016 and cropped from the image. The cropped image is also shown in Fig. \ref{figure_boonsong_lake}. The size of the cropped image is $(167-70+1) \times (420-325+1) = 98 \times 96$ pixels.
+The length of this lake is given $3000$ feet. On the other hand, using Pythagorean theorem, we have:
+$$\ell = \sqrt{96^2 + 98^2} = 137.186 \text{ pixels} \overset{\text{set}}{=} 3000 \implies 1 \text{ pixel} = 21.86 \text{ feet} = 6.66 \text{ meters}$$
+This gives us the scale and resolution of the provided multi-channel images:
+$$650 \text{ pixels} \times 650 \text{ pixels}= 14209 \text{ feet} \times 14209 \text{ feet} = 4.329 \text{ km} \times 4.329 \text{ km}$$
+The orientation of the images can also be found using the orientation of the image of Boonsong lake. This lake is oriented north-south; hence, the images are oriented from north-east at top to south-west at bottom.
+
+```{r, eval=FALSE, echo=FALSE, fig.height = 6, fig.width = 6, fig.align = "center", message=FALSE, warning=FALSE}
+# plotting the image of Boonsong lake provided in the dataset:
+savePar <- par(mfrow=c(1,2))
+{
+  address_file <- getwd()
+  address_file <- paste(address_file, "Dataset/Dataset3/Boonsong lake.jpg", sep="/")
+  im <- load.image(address_file)
+  plot(im)
+}
+
+# cropping the Boonsong lake from the image 6:
+{
+  row_min = 70
+  row_max = 167
+  column_min = 325
+  column_max = 420
+  a <- image06_multi_RGB[column_min:column_max, row_min:row_max,1:3]
+  suppressMessages(image <- as.cimg(a, dim=c(row_max-row_min+1,column_max-column_min+1,3)))
+  plot(image, bty="l")
+}
+par(savePar)
+```
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{./images/Lake}
+\captionof{figure}{The Boonsong lake within the preserve. Left: the provided RGB image of this lake in the dataset. Right: The cropped image of the lake from the RGB image of June 2016.}
+\label{figure_boonsong_lake}
+\end{center}
+
+## Analysis of RGB Images
+
+Using the three first channels, we can have the RGB images shown in Fig. \ref{figure_RGB_images}. As can be seen in this figure, for every year, we have four images with the order of late winter, summer, early fall, and late fall. The images of winter (first column) and late fall (last column) are showing snow, ice, and frozen lake as expected. 
+
+\bigbreak
+Two of the images which are images of November 2014 and November 2015 are covered by \textbf{clouds} completely. Some small clouds also exist in images of August 2014, September 2015, March 2016, June 2016, and September 2016.
+
+\bigbreak
+From the RGB images, it can be seen that \textbf{in summer and early fall, we have more vegetation as expected. However, in winter nad late fall, the vegetation declines slightly because of the cold}.
+
+```{r, eval=FALSE, echo=FALSE}
+# plot the images in a grid: but as the images are too large, the R gives error so I do it manually. However, the code is here:
+
+savePar <- par(mfrow=c(3,4))
+for(image_index in 1:12){
+  if(image_index == 1){
+    image <- as.cimg(image01_multi_RGB, dim=c(651,651,3))
+    title <- "RGB image (March 2014)"
+  }
+  else if(image_index == 2){
+    image <- as.cimg(image01_multi_RGB, dim=c(651,651,3))
+    title <- "RGB image (August 2014)"
+  }
+  else if(image_index == 3){
+    image <- as.cimg(image01_multi_RGB, dim=c(651,651,3))
+    title <- "RGB image (November 2014)"
+  }
+  else if(image_index == 4){
+    image <- as.cimg(image01_multi_RGB, dim=c(651,651,3))
+    title <- "RGB image (December 2014)"
+  }
+  else if(image_index == 5){
+    image <- as.cimg(image01_multi_RGB, dim=c(651,651,3))
+    title <- "RGB image (February 2015)"
+  }
+  else if(image_index == 6){
+    image <- as.cimg(image01_multi_RGB, dim=c(651,651,3))
+    title <- "RGB image (June 2015)"
+  }
+  else if(image_index == 7){
+    image <- as.cimg(image01_multi_RGB, dim=c(651,651,3))
+    title <- "RGB image (September 2015)"
+  }
+  else if(image_index == 8){
+    image <- as.cimg(image01_multi_RGB, dim=c(651,651,3))
+    title <- "RGB image (November 2015)"
+  }
+  else if(image_index == 9){
+    image <- as.cimg(image01_multi_RGB, dim=c(651,651,3))
+    title <- "RGB image (March 2016)"
+  }
+  else if(image_index == 10){
+    image <- as.cimg(image01_multi_RGB, dim=c(651,651,3))
+    title <- "RGB image (June 2016)"
+  }
+  else if(image_index == 11){
+    image <- as.cimg(image01_multi_RGB, dim=c(651,651,3))
+    title <- "RGB image (September 2016)"
+  }
+  else if(image_index == 12){
+    image <- as.cimg(image01_multi_RGB, dim=c(651,651,3))
+    title <- "RGB image (December 2016)"
+  }
+  plot(image, main=title)
+}
+par(savePar)
+```
+
+\begin{center}
+\includegraphics[width=1\textwidth]{./images/RGB_images}
+\captionof{figure}{The RGB aerial images from the preserve during years 2014 to 2016.}
+\label{figure_RGB_images}
+\end{center}
+
+## Analysis of Changes In Vegetation Health
+
+According to Table \ref{table_bands}, the band B3 and B4 represent the vegetation and chlorophyll. Therefore, if we make \textbf{false-color images} using the three channels of \textbf{[B4,B3,B2]}, we can show the changes in plant health. These images are shown in Fig. \ref{figure_false_images_1}. The red colors in these false-color images show the good plant health. 
+
+\bigbreak
+
+Another way to assess the vegetation health is to plot the Normalized Difference Vegetation Index (NDVI). This ratio is:
+$$\text{NDVI} = \frac{\text{B4} - \text{B3}}{\text{B4} + \text{B3}}$$
+This ratio contains both B3 and B4 bands which are sensetive to vegetation and plant health. In Fig. \ref{figure_NDVI}, We plot this ratio across the image frame in order to assess the vegetation. In this figure, the NDVI index above a threshold $0.1$ out of $1$ is highlighted by green color to show good health of vegetation.
+
+\bigbreak
+
+Note that in figures \ref{figure_false_images_1} and \ref{figure_NDVI}, images of November 2014 and November 2015 might not be valid for consideration because of existance of thick clouds. As can be seen in images of figures \ref{figure_false_images_1} and \ref{figure_NDVI}:
+
+\bigbreak
+
+* \textbf{In summer and early fall, the vegetation health is better} which is expected because of suitable weather conditions.
+
+* By noticing March 2014 and February 2015, the \textbf{vegetation of winter 2015 has declined compared to summer 2014.}
+
+* By noticing August 2014 and June 2015, the \textbf{vegetation of summer 2015 has improved compared to summer 2014.}
+
+* By noticing images of years 2015 and 2016, the \textbf{vegetation of 2016 has improved compared to 2015 in overall.}
+
+* By noticing images of June 2015 and June 2016, the \textbf{vegetation of up-left corner of image has suspiciously declined. According to orientation of images, the vegetation of north and north-west of preserve has declined.}
+
+* Noticing all images of 2014, 2015, and 2016, we see that \textbf{in overall the vegetation of preserve is declining across the years.}
+
+\bigbreak
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# function for plotting the three-channel images:
+
+plot_images <- function(bands){
+  someData2 <- rep(NaN, 651*651*3)
+  #==================
+  image_multi <- array(someData2, c(651, 651, 3))
+  image_multi[,,1] <- image01_multi_notReshaped[,,bands[1]]
+  image_multi[,,2] <- image01_multi_notReshaped[,,bands[2]]
+  image_multi[,,3] <- image01_multi_notReshaped[,,bands[3]]
+  suppressMessages(image <- as.cimg(image_multi, dim=c(651,651,3)))
+  title <- "March 2014"
+  plot(image, main=title, axes=FALSE)
+  #==================
+  image_multi <- array(someData2, c(651, 651, 3))
+  image_multi[,,1] <- image02_multi_notReshaped[,,bands[1]]
+  image_multi[,,2] <- image02_multi_notReshaped[,,bands[2]]
+  image_multi[,,3] <- image02_multi_notReshaped[,,bands[3]]
+  suppressMessages(image <- as.cimg(image_multi, dim=c(651,651,3)))
+  title <- "August 2014"
+  plot(image, main=title, axes=FALSE)
+  #==================
+  image_multi <- array(someData2, c(651, 651, 3))
+  image_multi[,,1] <- image03_multi_notReshaped[,,bands[1]]
+  image_multi[,,2] <- image03_multi_notReshaped[,,bands[2]]
+  image_multi[,,3] <- image03_multi_notReshaped[,,bands[3]]
+  suppressMessages(image <- as.cimg(image_multi, dim=c(651,651,3)))
+  title <- "November 2014"
+  plot(image, main=title, axes=FALSE)
+  #==================
+  image_multi <- array(someData2, c(651, 651, 3))
+  image_multi[,,1] <- image04_multi_notReshaped[,,bands[1]]
+  image_multi[,,2] <- image04_multi_notReshaped[,,bands[2]]
+  image_multi[,,3] <- image04_multi_notReshaped[,,bands[3]]
+  suppressMessages(image <- as.cimg(image_multi, dim=c(651,651,3)))
+  title <- "December 2014"
+  plot(image, main=title, axes=FALSE)
+  #==================
+  image_multi <- array(someData2, c(651, 651, 3))
+  image_multi[,,1] <- image05_multi_notReshaped[,,bands[1]]
+  image_multi[,,2] <- image05_multi_notReshaped[,,bands[2]]
+  image_multi[,,3] <- image05_multi_notReshaped[,,bands[3]]
+  suppressMessages(image <- as.cimg(image_multi, dim=c(651,651,3)))
+  title <- "February 2015"
+  plot(image, main=title, axes=FALSE)
+  #==================
+  image_multi <- array(someData2, c(651, 651, 3))
+  image_multi[,,1] <- image06_multi_notReshaped[,,bands[1]]
+  image_multi[,,2] <- image06_multi_notReshaped[,,bands[2]]
+  image_multi[,,3] <- image06_multi_notReshaped[,,bands[3]]
+  suppressMessages(image <- as.cimg(image_multi, dim=c(651,651,3)))
+  title <- "June 2015"
+  plot(image, main=title, axes=FALSE)
+  #==================
+  image_multi <- array(someData2, c(651, 651, 3))
+  image_multi[,,1] <- image07_multi_notReshaped[,,bands[1]]
+  image_multi[,,2] <- image07_multi_notReshaped[,,bands[2]]
+  image_multi[,,3] <- image07_multi_notReshaped[,,bands[3]]
+  suppressMessages(image <- as.cimg(image_multi, dim=c(651,651,3)))
+  title <- "September 2015"
+  plot(image, main=title, axes=FALSE)
+  #==================
+  image_multi <- array(someData2, c(651, 651, 3))
+  image_multi[,,1] <- image08_multi_notReshaped[,,bands[1]]
+  image_multi[,,2] <- image08_multi_notReshaped[,,bands[2]]
+  image_multi[,,3] <- image08_multi_notReshaped[,,bands[3]]
+  suppressMessages(image <- as.cimg(image_multi, dim=c(651,651,3)))
+  title <- "November 2015"
+  plot(image, main=title, axes=FALSE)
+  #==================
+  image_multi <- array(someData2, c(651, 651, 3))
+  image_multi[,,1] <- image09_multi_notReshaped[,,bands[1]]
+  image_multi[,,2] <- image09_multi_notReshaped[,,bands[2]]
+  image_multi[,,3] <- image09_multi_notReshaped[,,bands[3]]
+  suppressMessages(image <- as.cimg(image_multi, dim=c(651,651,3)))
+  title <- "March 2016"
+  plot(image, main=title, axes=FALSE)
+  #==================
+  image_multi <- array(someData2, c(651, 651, 3))
+  image_multi[,,1] <- image10_multi_notReshaped[,,bands[1]]
+  image_multi[,,2] <- image10_multi_notReshaped[,,bands[2]]
+  image_multi[,,3] <- image10_multi_notReshaped[,,bands[3]]
+  suppressMessages(image <- as.cimg(image_multi, dim=c(651,651,3)))
+  title <- "June 2016"
+  plot(image, main=title, axes=FALSE)
+  #==================
+  image_multi <- array(someData2, c(651, 651, 3))
+  image_multi[,,1] <- image11_multi_notReshaped[,,bands[1]]
+  image_multi[,,2] <- image11_multi_notReshaped[,,bands[2]]
+  image_multi[,,3] <- image11_multi_notReshaped[,,bands[3]]
+  suppressMessages(image <- as.cimg(image_multi, dim=c(651,651,3)))
+  title <- "September 2016"
+  plot(image, main=title, axes=FALSE)
+  #==================
+  image_multi <- array(someData2, c(651, 651, 3))
+  image_multi[,,1] <- image12_multi_notReshaped[,,bands[1]]
+  image_multi[,,2] <- image12_multi_notReshaped[,,bands[2]]
+  image_multi[,,3] <- image12_multi_notReshaped[,,bands[3]]
+  suppressMessages(image <- as.cimg(image_multi, dim=c(651,651,3)))
+  title <- "December 2016"
+  plot(image, main=title, axes=FALSE)
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# plotting the [B4,B3,B2] channels of images:
+
+plot_images(bands=c(4,3,2))
+```
+
+\begin{center}
+\includegraphics[width=1\textwidth]{./images/false1_images}
+\captionof{figure}{The images obtained from bands [B4,B3,B2] from the multi-channel images of the preserve during years 2014 to 2016.}
+\label{figure_false_images_1}
+\end{center}
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# function for plotting the gray (one-channel) images:
+
+plot_gray_image <- function(thresholding=TRUE, threshold=NaN, color_highlight="red", function_intensity){
+  #https://cran.r-project.org/web/packages/imager/vignettes/pixsets.html
+  someData3 <- rep(NaN, 651*651)
+  seasons_of_images <- c("March 2014", "August 2014", "November 2014", "December 2014", "February 2015", "June 2015", "September 2015", "November 2015", "March 2016", "June 2016", "September 2016", "December 2016")
+  #==================
+  image_gray <- array(someData3, c(651, 651))
+  image_gray[,] <- function_intensity(image=image01_multi_notReshaped)
+  suppressMessages(image <- as.cimg(image_gray, dim=c(651,651)))
+  title <- seasons_of_images[1]
+  if(thresholding == FALSE){
+    plot(image, main=title, axes=FALSE)
+  }
+  else{
+    px <- (image  > threshold)
+    #highlight(px)
+    plot(colorise(image,px,color_highlight), main=title, axes=FALSE) 
+    #plot(px)
+  }
+  #==================
+  image_gray <- array(someData3, c(651, 651))
+  image_gray[,] <- function_intensity(image=image02_multi_notReshaped)
+  suppressMessages(image <- as.cimg(image_gray, dim=c(651,651)))
+  title <- seasons_of_images[2]
+  if(thresholding == FALSE){
+    plot(image, main=title, axes=FALSE)
+  }
+  else{
+    px <- (image  > threshold)
+    #highlight(px)
+    plot(colorise(image,px,color_highlight), main=title, axes=FALSE) 
+    #plot(px)
+  }
+  #==================
+  image_gray <- array(someData3, c(651, 651))
+  image_gray[,] <- function_intensity(image=image03_multi_notReshaped)
+  suppressMessages(image <- as.cimg(image_gray, dim=c(651,651)))
+  title <- seasons_of_images[3]
+  if(thresholding == FALSE){
+    plot(image, main=title, axes=FALSE)
+  }
+  else{
+    px <- (image  > threshold)
+    #highlight(px)
+    plot(colorise(image,px,color_highlight), main=title, axes=FALSE) 
+    #plot(px)
+  }
+  #==================
+  image_gray <- array(someData3, c(651, 651))
+  image_gray[,] <- function_intensity(image=image04_multi_notReshaped)
+  suppressMessages(image <- as.cimg(image_gray, dim=c(651,651)))
+  title <- seasons_of_images[4]
+  if(thresholding == FALSE){
+    plot(image, main=title, axes=FALSE)
+  }
+  else{
+    px <- (image  > threshold)
+    #highlight(px)
+    plot(colorise(image,px,color_highlight), main=title, axes=FALSE) 
+    #plot(px)
+  }
+  #==================
+  image_gray <- array(someData3, c(651, 651))
+  image_gray[,] <- function_intensity(image=image05_multi_notReshaped)
+  suppressMessages(image <- as.cimg(image_gray, dim=c(651,651)))
+  title <- seasons_of_images[5]
+  if(thresholding == FALSE){
+    plot(image, main=title, axes=FALSE)
+  }
+  else{
+    px <- (image  > threshold)
+    #highlight(px)
+    plot(colorise(image,px,color_highlight), main=title, axes=FALSE) 
+    #plot(px)
+  }
+  #==================
+  image_gray <- array(someData3, c(651, 651))
+  image_gray[,] <- function_intensity(image=image06_multi_notReshaped)
+  suppressMessages(image <- as.cimg(image_gray, dim=c(651,651)))
+  title <- seasons_of_images[6]
+  if(thresholding == FALSE){
+    plot(image, main=title, axes=FALSE)
+  }
+  else{
+    px <- (image  > threshold)
+    #highlight(px)
+    plot(colorise(image,px,color_highlight), main=title, axes=FALSE) 
+    #plot(px)
+  }
+  #==================
+  image_gray <- array(someData3, c(651, 651))
+  image_gray[,] <- function_intensity(image=image07_multi_notReshaped)
+  suppressMessages(image <- as.cimg(image_gray, dim=c(651,651)))
+  title <- seasons_of_images[7]
+  if(thresholding == FALSE){
+    plot(image, main=title, axes=FALSE)
+  }
+  else{
+    px <- (image  > threshold)
+    #highlight(px)
+    plot(colorise(image,px,color_highlight), main=title, axes=FALSE) 
+    #plot(px)
+  }
+  #==================
+  image_gray <- array(someData3, c(651, 651))
+  image_gray[,] <- function_intensity(image=image08_multi_notReshaped)
+  suppressMessages(image <- as.cimg(image_gray, dim=c(651,651)))
+  title <- seasons_of_images[8]
+  if(thresholding == FALSE){
+    plot(image, main=title, axes=FALSE)
+  }
+  else{
+    px <- (image  > threshold)
+    #highlight(px)
+    plot(colorise(image,px,color_highlight), main=title, axes=FALSE) 
+    #plot(px)
+  }
+  #==================
+  image_gray <- array(someData3, c(651, 651))
+  image_gray[,] <- function_intensity(image=image09_multi_notReshaped)
+  suppressMessages(image <- as.cimg(image_gray, dim=c(651,651)))
+  title <- seasons_of_images[9]
+  if(thresholding == FALSE){
+    plot(image, main=title, axes=FALSE)
+  }
+  else{
+    px <- (image  > threshold)
+    #highlight(px)
+    plot(colorise(image,px,color_highlight), main=title, axes=FALSE) 
+    #plot(px)
+  }
+  #==================
+  image_gray <- array(someData3, c(651, 651))
+  image_gray[,] <- function_intensity(image=image10_multi_notReshaped)
+  suppressMessages(image <- as.cimg(image_gray, dim=c(651,651)))
+  title <- seasons_of_images[10]
+  if(thresholding == FALSE){
+    plot(image, main=title, axes=FALSE)
+  }
+  else{
+    px <- (image  > threshold)
+    #highlight(px)
+    plot(colorise(image,px,color_highlight), main=title, axes=FALSE) 
+    #plot(px)
+  }
+  #==================
+  image_gray <- array(someData3, c(651, 651))
+  image_gray[,] <- function_intensity(image=image11_multi_notReshaped)
+  suppressMessages(image <- as.cimg(image_gray, dim=c(651,651)))
+  title <- seasons_of_images[11]
+  if(thresholding == FALSE){
+    plot(image, main=title, axes=FALSE)
+  }
+  else{
+    px <- (image  > threshold)
+    #highlight(px)
+    plot(colorise(image,px,color_highlight), main=title, axes=FALSE) 
+    #plot(px)
+  }
+  #==================
+  image_gray <- array(someData3, c(651, 651))
+  image_gray[,] <- function_intensity(image=image12_multi_notReshaped)
+  suppressMessages(image <- as.cimg(image_gray, dim=c(651,651)))
+  title <- seasons_of_images[12]
+  if(thresholding == FALSE){
+    plot(image, main=title, axes=FALSE)
+  }
+  else{
+    px <- (image  > threshold)
+    #highlight(px)
+    plot(colorise(image,px,color_highlight), main=title, axes=FALSE) 
+    #plot(px)
+  }
+}
+
+# function for calculating the normalized_difference_vegetation_index (NDVI) index:
+normalized_difference_vegetation_index <- function(image){
+  n_rows = dim(image)[1]
+  n_columns = dim(image)[2]
+  someData3 <- rep(NaN, n_rows*n_columns)
+  image_gray <- array(someData3, c(n_rows, n_columns))
+  image_gray[,] <- (image[,,4]-image[,,3]) / (image[,,4]+image[,,3])
+  return(image_gray)
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# plotting the NDVI index of images:
+
+plot_gray_image(thresholding=TRUE, threshold=0.1, color_highlight="green", function_intensity=normalized_difference_vegetation_index)
+```
+
+\begin{center}
+\includegraphics[width=1\textwidth]{./images/NDVI}
+\captionof{figure}{The Normalized Difference Vegetation Index (NVDI) of the preserve during years 2014 to 2016. The threshold for highlighting the healthy vegeterated areas is 0.1 out of 1.}
+\label{figure_NDVI}
+\end{center}
+
+## Analysis of Dry Areas
+
+According to Table \ref{table_bands}, the band B4 and B5 represent the dry areas because they are absorbed by liquid water. Therefore, if we make \textbf{false-color images} using the three channels of \textbf{[B5,B4,B2]}, we can show the dry regions of the preserve. These images are shown in Fig. \ref{figure_false_images_2}. The red colors in these false-color images show the dry or burned regions. 
+
+\bigbreak
+Another way to observe the dry regions of the preserve is to merely consider the \textbf{band B5} which is completely absorbed by liquid water (see Table \ref{table_bands}). In Fig. \ref{figure_burn}, we plot this band across the image frame in order to observe the dry regions. In this figure, the value of B5 above a threshold $0.7$ out of $1$ is highlighted by red color to show the dry regions. In the images of this figure, some areas are falsly highlighted because of the clouds. These areas are shown by rectangles to be excluded from our analysis.
+
+\bigbreak
+As can be seen in figures \ref{figure_false_images_2} and \ref{figure_burn}: 
+
+\bigbreak
+
+* Noticing images of August 2014 and June 2015, we can say that \textbf{2015 has been drier than 2014}.
+
+* Noticing images of June 2015 and June 2016, we can say that \textbf{2016 has had more moisture than 2015 in summer}.
+
+* Noticing images of September 2015 and September 2016, we can say that \textbf{2016 has been drier than 2015 in fall}.
+
+* Noticing all images of 2014, 2015, and 2016, we see that \textbf{in overall the preserve is becoming drier and drier across the years.}
+
+\bigbreak
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# plotting the [B4,B3,B2] channels of images:
+
+plot_images(bands=c(5,4,2))
+```
+
+\begin{center}
+\includegraphics[width=1\textwidth]{./images/false2_images}
+\captionof{figure}{The images obtained from bands [B5,B4,B2] from the multi-channel images of the preserve during years 2014 to 2016.}
+\label{figure_false_images_2}
+\end{center}
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# this function converts RGB image to gray scale:
+
+RGB2GRAY <- function(image){
+  n_rows = dim(image)[1]
+  n_columns = dim(image)[2]
+  someData3 <- rep(NaN, n_rows*n_columns)
+  image_gray <- array(someData3, c(n_rows, n_columns))
+  image_gray[,] <- (0.2126*image[,,1]) + (0.7152*image[,,2]) + (0.0722*image[,,3])
+  return(image_gray)
+}
+```
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# function for extracting the B5 channel of image to make a gray-scale image:
+
+gray_scale_of_B5_burning <- function(image){
+  image_gray <- image[,,5]
+  image_gray <- image_gray / 255
+  return(image_gray)
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# plotting the B5 channel of images which shows the burning (dry) areas:
+
+plot_gray_image(thresholding=TRUE, threshold=0.7, color_highlight="red", function_intensity=gray_scale_of_B5_burning)  
+```
+
+\begin{center}
+\includegraphics[width=1\textwidth]{./images/burn}
+\captionof{figure}{The images obtained from the band B5 of the multi-channel images of the preserve during years 2014 to 2016. The threshold for highlighting the dry or burned areas is 0.7 out of 1. The areas which are falsely colored red because of clouds, lake, or ice are shown by rectangles.}
+\label{figure_burn}
+\end{center}
+
+## Analysis of Soil Mineral Content
+
+According to Table \ref{table_bands}, the \textbf{band B6} is sensitive to the soil mineral content. In Fig. \ref{figure_mineral}, we plot this band across the image frame in order to observe the mineral content of soil. In this figure, the value of B6 above a threshold $0.7$ out of $1$ is highlighted by yellow color to show the rich mineral amount of soil. Note that the mineral of soil is useful for plant to grow. In the images of this figure, some areas are falsly highlighted because of the clouds. These areas are shown by rectangles to be excluded from our analysis.
+
+\bigbreak
+As can be seen in Fig. \ref{figure_mineral}: 
+
+\bigbreak
+
+* Noticing images of August 2014 and June 2015, we can say that \textbf{2016 has been slightly richer in soil mineral than 2015 in summer}.
+
+* Noticing images of June 2015 and June 2016, we can say that \textbf{2016 has been poorer in soil mineral than 2015 in summer}.
+
+* Noticing images of September 2015 and September 2016, we can say that \textbf{2016 has been slightly richer in soil mineral than 2015 in fall}.
+
+* Noticing all images of 2014, 2015, and 2016, we see that \textbf{in overall the preserve is becoming slighly richer in soil mineral in overall.}
+
+\bigbreak
+
+If we combine the observation of figures \ref{figure_NDVI} and \ref{figure_mineral}, we see that \textbf{the vegetation is declining but soil mineral is improving across the years}. This shows that \textbf{the reason of vegetation decline is not because of the soil but it must be the chemicals in the air. This gives us some clues back to the previous analysis of the chemicals in last section.}
+
+\bigbreak
+
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
+# function for extracting the B6 channel of image to make a gray-scale image:
+
+gray_scale_of_B6_burning <- function(image){
+  image_gray <- image[,,6]
+  image_gray <- image_gray / 255
+  return(image_gray)
+}
+```
+
+```{r, eval=FALSE, echo=FALSE, warning=FALSE}
+# plotting the B6 channel of images which shows the soil mineral content:
+
+plot_gray_image(thresholding=TRUE, threshold=0.7, color_highlight="yellow", function_intensity=gray_scale_of_B6_burning)
+```
+
+\begin{center}
+\includegraphics[width=1\textwidth]{./images/mineral}
+\captionof{figure}{The images obtained from the band B6 of the multi-channel images of the preserve during years 2014 to 2016. The threshold for highlighting the dry or burned areas is 0.7 out of 1. The areas which are falsely colored yellow because of clouds, lake, or ice are shown by rectangles.}
+\label{figure_mineral}
+\end{center}
+
+# Conclusion
+
+## Summary of The Foundings
+
+In the previous sections, we mentioned various big and small suspecious activities and events which may have happened in the preserve. Here, we summarize the most important foundings and do not re-mention the small details or not very important conclusions. 
+
+\bigbreak
+The main important conclusions from the \textbf{analysis of vehicle traffic} through the natrue preserve were:
+
+* Some two-axle cars, two-axle trucks, three-axle trucks, and two-axle buses have not been sensored after some camping and general gates.
+
+* Some four-axle trucks have passed through the gates illegally. these gates can only be passed by rangers.
+
+* Rangers have missed inspecting in the east of the preserve mostly. However, non-ranger vehicles have visited the east significantly.
+
+* Around June 2015, the traffic of all types of vehicles has increased a lot. This might be distructive to the nature preserve or might have had bad effects on the quality of life of flora and fauna in the preserve.
+
+\bigbreak
+The main important conclusions from the \textbf{analysis of surrounding factories}:
+
+* Some sensor failures have occured mostly at three time periods, i.e., April and June 2016, August and September 2016, and December 2016.
+
+* At some periods of time, we have had very high values (30 to 80 parts per million) of Methylosmolene and AGOC-3A. these two chemicals are very dangerous and toxic so they are very distructive to the life of flora and fauna in the preserve.
+
+* Some odd chemical accumulation of Appluimonia and Chlorodinine have happened at different months of 2016 recorded by sensor 6. The values of these two chemicals have increased in 2016. The sensor 6 is close to all the factories.
+
+* For different months of 2016 the two factories Roadrunner and Kasios are suspect to generating the four chemicals Appluimonia, Chlorodinine, Methylosmolene, and AGOC-3A higher than the acceptable standards.
+
+\bigbreak
+The main important conclusions from the \textbf{analysis of aerial multi-channel images}:
+
+* In overall, the natrue preserve is becoming drier and drier across the years 2014 to 2016.
+
+* In overall, the natrue preserve is becoming poorer in vegetation across the years 2014 to 2016.
+
+* The vegetation of the preserve is declining but the soil mineral is improving across the years. This shows that the reason of vegetation decline is not because of the soil but it must be the chemicals in the air. 
+
+## Combining The Foundings
+
+If we see the different foundings mentioned in the previous section, we can come up with some combined foundings which might be useful for final analysis:
+
+* The significant number of visits to the preserve in June 2015 might have had distructive influence on the preserve resulting in drier soil and decline in vegetation.
+
+* The increase of toxic chemicals generated by the two factories Roadrunner and Kasios in 2016 might have had bad impact on the breath of plants resulting in decline of vegetation. 
+
+* The increase of toxic chemicals might also have had distructive effect on the life of animals and birds including the Blue Pipit.
+
+* The odd accumulation of the chemicals recorded by sensor 6 and the strange failures in the performance of sensors might have some relations.
+
+## The Possible Reasons of Population Decline of The Blue Pipit
+
+Finally, we can list the possible reasons of the decline in population of the Blue Pipit:
+
+* The high number of visits to the preserve in June 2015
+
+* Some strange activities in the east of the preserve where the inspectation of rangers was not satisfactory there. 
+
+* Some illegal passes through the gates. The distructive activities might have happened in those cases.
+
+* Some strange ending points of trajectories for some vehicles. The distructive activities might have happened in those cases.
+
+* Some odd problems in performance of the sensors at the south of the preserve in different months of 2016. The sensors might have been manipulated for evil reasons by either the visitors or the factory managors.
+
+* Generation of toxic chemicals by the two factories Roadrunner and Kasios in different months of 2016.
+
+* The soil of the preserve has become dry and the vegetation health has declined.
+
+## Suggested Solutions For Preventing Further Problems
+    
+As a conclusion to the paper, we suggest some solutions for preventing similar problems in the preserve:
+
+* Controlling the number of visitors
+
+* Permanent investigation in ``all'' regions of the preserve and in ``various times''
+
+* Increasing security at the gates
+
+* Controlling whether the visitors have left the preserve or not after a reasonable time
+
+* Controlling and investigating the chemicals generated by the factories more carefully
+
+* Using fertilizers regularly in order to make the soil of the preserve richer for better vegetation. Better vegetation and flora helps to have better life for fauna.
+    
+# References
+
+
+    
